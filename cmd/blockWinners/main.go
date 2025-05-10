@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"github.com/Snipa22/go-tari-grpc-lib/nodeGRPC"
 	"log"
@@ -15,11 +16,12 @@ func makeRange(min uint64, max uint64) []uint64 {
 }
 
 func main() {
+	depthPtr := flag.Int("depth", 100, "an int")
 	tipData, err := nodeGRPC.GetTipInfo()
 	if err != nil {
 		log.Fatal(err)
 	}
-	blocks, err := nodeGRPC.GetBlockByHeight(makeRange(tipData.Metadata.BestBlockHeight-501, tipData.Metadata.BestBlockHeight-1))
+	blocks, err := nodeGRPC.GetBlockByHeight(makeRange(tipData.Metadata.BestBlockHeight-uint64(*depthPtr), tipData.Metadata.BestBlockHeight))
 	if err != nil {
 		log.Fatal(err)
 	}
