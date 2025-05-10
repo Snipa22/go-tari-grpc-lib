@@ -3,7 +3,7 @@ package nodeGRPC
 import (
 	"context"
 	"flag"
-	"go-tari-grpc-lib/tari_generated"
+	"github.com/Snipa22/go-tari-grpc-lib/tari_generated"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"io"
