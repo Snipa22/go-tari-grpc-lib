@@ -109,3 +109,23 @@ func SubmitBlock(requestData *tari_generated.Block) (*tari_generated.SubmitBlock
 	client := tari_generated.NewBaseNodeClient(conn)
 	return client.SubmitBlock(context.Background(), requestData)
 }
+
+// GetNetworkDiff pulls the network diff of a given block, or it will just use tip if you give it a 0
+func GetNetworkDiff(height uint64) (*tari_generated.NetworkDifficultyResponse, error) {
+	conn, err := getBaseConnection()
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Close()
+	client := tari_generated.NewBaseNodeClient(conn)
+	var diffClient tari_generated.BaseNode_GetNetworkDifficultyClient
+	if height == 0 {
+		diffClient, err = client.GetNetworkDifficulty(context.Background(), &tari_generated.HeightRequest{FromTip: 1})
+	} else {
+		diffClient, err = client.GetNetworkDifficulty(context.Background(), &tari_generated.HeightRequest{StartHeight: height, EndHeight: height})
+	}
+	if err != nil {
+		return nil, err
+	}
+	return diffClient.Recv()
+}
