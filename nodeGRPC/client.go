@@ -86,7 +86,7 @@ func GetBlockByHeight(blockIDs []uint64) ([]*tari_generated.Block, error) {
 	if err != nil {
 		return nil, err
 	}
-	resp := make([]*tari_generated.Block, len(blockIDs))
+	resp := make([]*tari_generated.Block, 0)
 	for {
 		blockResp, err := active_client.Recv()
 		if err != nil {
