@@ -15,12 +15,10 @@ func makeRange(min uint64, max uint64) []uint64 {
 }
 
 func main() {
-	fmt.Println("Getting Tip Data")
 	tipData, err := nodeGRPC.GetTipInfo()
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("Getting Block Data")
 	blocks, err := nodeGRPC.GetBlockByHeight(makeRange(tipData.Metadata.BestBlockHeight-501, tipData.Metadata.BestBlockHeight-1))
 	if err != nil {
 		log.Fatal(err)
@@ -40,15 +38,15 @@ func main() {
 				if txExtra != nil {
 					results[string(txExtra[3:12])] = append(results[string(txExtra[3:12])], block.Header.Height)
 				} else {
-					results["unknown"] = append(results["unknown"], block.Header.Height)
+					results["unknown_no_tx_extra"] = append(results["unknown_no_tx_extra"], block.Header.Height)
 					continue
 				}
 			} else {
-				results["unknown"] = append(results["unknown"], block.Header.Height)
+				results["unknown_no_features"] = append(results["unknown_no_features"], block.Header.Height)
 				continue
 			}
 		} else {
-			results["unknown"] = append(results["unknown"], block.Header.Height)
+			results["unknown_no_output"] = append(results["unknown_no_output"], block.Header.Height)
 			continue
 		}
 	}
