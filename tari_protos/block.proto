@@ -24,7 +24,7 @@ syntax = "proto3";
 package tari.rpc;
 
 import "transaction.proto";
-option go_package = "github.com/Snipa22/go-tari-p2pool-interface/tari_generated";
+option go_package = "github.com/Snipa22/go-tari-grpc-lib/tari_generated";
 
 // The BlockHeader contains all the metadata for the block, including proof of work, a link to the previous block
 // and the transaction kernels.

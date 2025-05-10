@@ -26,7 +26,7 @@ import "network.proto";
 import "transaction.proto";
 
 package tari.rpc;
-option go_package = "github.com/Snipa22/go-tari-p2pool-interface/tari_generated";
+option go_package = "github.com/Snipa22/go-tari-grpc-lib/tari_generated";
 
 
 service ValidatorNode {
