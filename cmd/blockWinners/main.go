@@ -21,7 +21,7 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Println("Getting Block Data")
-	blocks, err := nodeGRPC.GetBlockByHeight(makeRange(tipData.Metadata.BestBlockHeight-101, tipData.Metadata.BestBlockHeight-1))
+	blocks, err := nodeGRPC.GetBlockByHeight(makeRange(tipData.Metadata.BestBlockHeight-501, tipData.Metadata.BestBlockHeight-1))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -52,5 +52,7 @@ func main() {
 			continue
 		}
 	}
-	fmt.Println("Scan Results: ", results)
+	for pool, blockIds := range results {
+		fmt.Println(pool, "has", len(blockIds), "blocks:", blockIds)
+	}
 }
