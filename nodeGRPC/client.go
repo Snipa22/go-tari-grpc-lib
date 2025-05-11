@@ -64,14 +64,14 @@ func GetBlockTemplate(algo *tari_generated.PowAlgo) (*tari_generated.NewBlockTem
 }
 
 // GetBlockWithCoinbases wraps the GetNewBlockWithCoinbases, requires all data for the GRPC request
-func GetBlockWithCoinbases(requestData *tari_generated.GetNewBlockTemplateWithCoinbasesRequest) (*tari_generated.GetNewBlockResult, error) {
+func GetBlockWithCoinbases(requestData *tari_generated.GetNewBlockWithCoinbasesRequest) (*tari_generated.GetNewBlockResult, error) {
 	conn, err := getBaseConnection()
 	if err != nil {
 		return nil, err
 	}
 	defer conn.Close()
 	client := tari_generated.NewBaseNodeClient(conn)
-	return client.GetNewBlockTemplateWithCoinbases(context.Background(), requestData)
+	return client.GetNewBlockWithCoinbases(context.Background(), requestData)
 }
 
 // GetBlockByHeight retrieves blocks, handles the streaming data, then returns the blocks as a slice
