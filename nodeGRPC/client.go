@@ -85,6 +85,17 @@ func GetNetworkState() (*tari_generated.GetNetworkStateResponse, error) {
 	return client.GetNetworkState(context.Background(), nil)
 }
 
+// GetNewBlock wraps the GetNewBlock GRPC call
+func GetNewBlock(requestData *tari_generated.NewBlockTemplate) (*tari_generated.GetNewBlockResult, error) {
+	conn, err := getBaseConnection()
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Close()
+	client := tari_generated.NewBaseNodeClient(conn)
+	return client.GetNewBlock(context.Background(), requestData)
+}
+
 // GetBlockByHeight retrieves blocks, handles the streaming data, then returns the blocks as a slice
 func GetBlockByHeight(blockIDs []uint64) ([]*tari_generated.Block, error) {
 	conn, err := getBaseConnection()
