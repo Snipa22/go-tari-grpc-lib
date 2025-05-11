@@ -74,6 +74,17 @@ func GetBlockWithCoinbases(requestData *tari_generated.GetNewBlockWithCoinbasesR
 	return client.GetNewBlockWithCoinbases(context.Background(), requestData)
 }
 
+// GetNetworkState wraps the GetNetworkState RPC call
+func GetNetworkState() (*tari_generated.GetNetworkStateResponse, error) {
+	conn, err := getBaseConnection()
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Close()
+	client := tari_generated.NewBaseNodeClient(conn)
+	return client.GetNetworkState(context.Background(), nil)
+}
+
 // GetBlockByHeight retrieves blocks, handles the streaming data, then returns the blocks as a slice
 func GetBlockByHeight(blockIDs []uint64) ([]*tari_generated.Block, error) {
 	conn, err := getBaseConnection()
