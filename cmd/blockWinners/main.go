@@ -23,6 +23,11 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	if depthPtr != nil && *depthPtr == 0 {
+		chainLength := int(tipData.Metadata.BestBlockHeight)
+		depthPtr = &chainLength
+	}
 	blocks, err := nodeGRPC.GetBlockByHeight(makeRange(tipData.Metadata.BestBlockHeight-uint64(*depthPtr), tipData.Metadata.BestBlockHeight))
 	if err != nil {
 		log.Fatal(err)
