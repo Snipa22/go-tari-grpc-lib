@@ -7,7 +7,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"io"
-	"os"
 )
 
 /*
@@ -21,11 +20,10 @@ use minotari_app_grpc::tari_rpc::{
 };
 */
 
-func getEnv(key, fallback string) string {
-	if value, ok := os.LookupEnv(key); ok {
-		return value
-	}
-	return fallback
+var grpcNodeAddress string
+
+func InitNodeGRPC(nodeAddress string) {
+	grpcNodeAddress = nodeAddress
 }
 
 // getBaseConnection builds the connection so we can init the BaseNodeClient, it does NOT close the connection, so we
@@ -34,7 +32,7 @@ func getBaseConnection() (*grpc.ClientConn, error) {
 	flag.Parse()
 	var opts []grpc.DialOption
 	opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	conn, err := grpc.NewClient(getEnv("basenode_address", "node-pool.tari.jagtech.io:18102"), opts...)
+	conn, err := grpc.NewClient(grpcNodeAddress, opts...)
 	if err != nil {
 		return nil, err
 	}
