@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.1](https://github.com/Snipa22/go-tari-grpc-lib/compare/v2.0.0...v2.0.1) (2025-05-14)
+
+
+### Bug Fixes
+
+* **submodule:** bump to v2 ([b6da62e](https://github.com/Snipa22/go-tari-grpc-lib/commit/b6da62e111b4489faf3d25df2bc21f14cbfec516))
+
 ## [2.0.0](https://github.com/Snipa22/go-tari-grpc-lib/compare/v1.0.0...v2.0.0) (2025-05-14)
 
 
