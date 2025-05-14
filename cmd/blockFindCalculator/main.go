@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/Snipa22/go-tari-grpc-lib/nodeGRPC"
+	"github.com/Snipa22/go-tari-grpc-lib/v2/nodeGRPC"
 	"log"
 )
 

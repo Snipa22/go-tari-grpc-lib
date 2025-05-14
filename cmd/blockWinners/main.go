@@ -3,8 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/Snipa22/go-tari-grpc-lib/nodeGRPC"
-	"github.com/Snipa22/go-tari-grpc-lib/tari_generated"
+	"github.com/Snipa22/go-tari-grpc-lib/v2/nodeGRPC"
+	"github.com/Snipa22/go-tari-grpc-lib/v2/tari_generated"
 	"log"
 	"strings"
 	"unicode"
