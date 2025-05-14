@@ -6,6 +6,7 @@ import (
 	"github.com/Snipa22/go-tari-grpc-lib/tari_generated"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"io"
 )
 
 var grpcWalletAddress string
@@ -38,4 +39,41 @@ func SendTransactions(transactions []*tari_generated.PaymentRecipient) (*tari_ge
 	return client.Transfer(context.Background(), &tari_generated.TransferRequest{
 		Recipients: transactions,
 	})
+}
+
+// GetTransactionsInBlock will return the top of the wallet if it's called with 0, otherwise it pushes the height to
+// the GRPC call, though this doesn't seem to actually do anything.  No sorting/order/etc is guaranteed, so callers
+// need to parse, cache etc.
+func GetTransactionsInBlock(blockHeight uint64) ([]*tari_generated.TransactionInfo, error) {
+	conn, err := getWalletConnection()
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Close()
+	client := tari_generated.NewWalletClient(conn)
+	var completedTxnsClient tari_generated.Wallet_GetCompletedTransactionsClient
+	if blockHeight == 0 {
+		completedTxnsClient, err = client.GetCompletedTransactions(context.Background(), nil)
+	} else {
+		completedTxnsClient, err = client.GetCompletedTransactions(context.Background(), &tari_generated.GetCompletedTransactionsRequest{
+			BlockHeight: &tari_generated.BlockHeight{
+				BlockHeight: blockHeight,
+			},
+		})
+	}
+
+	if err != nil {
+		return nil, err
+	}
+	resp := make([]*tari_generated.TransactionInfo, 0)
+	for {
+		txnResp, err := completedTxnsClient.Recv()
+		if err != nil {
+			if err == io.EOF {
+				return resp, nil
+			}
+			return nil, err
+		}
+		resp = append(resp, txnResp.Transaction)
+	}
 }
