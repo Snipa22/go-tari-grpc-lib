@@ -1,5 +1,19 @@
 # Changelog
 
+## [2.1.0](https://github.com/Snipa22/go-tari-grpc-lib/compare/v2.0.2...v2.1.0) (2025-05-15)
+
+
+### Features
+
+* **cmd:** add walletPaymentSender ([dd21911](https://github.com/Snipa22/go-tari-grpc-lib/commit/dd21911e3d7fc5c0618ab237c880eb641d0499fe))
+* **cmd:** add walletUTXOCreator ([53c543f](https://github.com/Snipa22/go-tari-grpc-lib/commit/53c543f2d3916174a767e2cae6bfec17f63de25b))
+
+
+### Bug Fixes
+
+* **blockWinners:** parse flags ([7a107e7](https://github.com/Snipa22/go-tari-grpc-lib/commit/7a107e77ccda14ecf99cc22cd639a9eeb3f91703))
+* **walletUTXOCreator:** parse flags ([dcef6ae](https://github.com/Snipa22/go-tari-grpc-lib/commit/dcef6ae23f16f3d8d57e47de4c746946bd1540cd))
+
 ## [2.0.2](https://github.com/Snipa22/go-tari-grpc-lib/compare/v2.0.1...v2.0.2) (2025-05-14)
 
 
