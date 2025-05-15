@@ -20,6 +20,7 @@ func makeRange(min uint64, max uint64) []uint64 {
 
 func main() {
 	depthPtr := flag.Int("depth", 100, "an int")
+	flag.Parse()
 	tipData, err := nodeGRPC.GetTipInfo()
 	if err != nil {
 		log.Fatal(err)
