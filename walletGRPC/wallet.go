@@ -77,3 +77,20 @@ func GetTransactionsInBlock(blockHeight uint64) ([]*tari_generated.TransactionIn
 		resp = append(resp, txnResp.Transaction)
 	}
 }
+
+// SubmitCoinSplitRequest wraps the CoinSplit GRPC call so we can split coins easier
+func SubmitCoinSplitRequest(splitAmt int, numSplits int) (*tari_generated.CoinSplitResponse, error) {
+	conn, err := getWalletConnection()
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Close()
+	client := tari_generated.NewWalletClient(conn)
+	return client.CoinSplit(context.Background(), &tari_generated.CoinSplitRequest{
+		AmountPerSplit: uint64(splitAmt),
+		SplitCount:     uint64(numSplits),
+		FeePerGram:     5,
+		LockHeight:     0,
+		PaymentId:      nil,
+	})
+}
