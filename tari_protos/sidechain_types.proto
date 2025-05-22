@@ -22,10 +22,9 @@
 syntax = "proto3";
 
 package tari.rpc;
-option go_package = "github.com/Snipa22/go-tari-grpc-lib/tari_generated";
 
 import "types.proto";
-
+option go_package = "github.com/Snipa22/go-tari-grpc-lib/tari_generated";
 message SideChainFeature {
     oneof side_chain_feature {
         ValidatorNodeRegistration validator_node_registration = 1;

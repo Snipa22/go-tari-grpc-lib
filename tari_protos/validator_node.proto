@@ -27,8 +27,6 @@ import "transaction.proto";
 
 package tari.rpc;
 option go_package = "github.com/Snipa22/go-tari-grpc-lib/tari_generated";
-
-
 service ValidatorNode {
     rpc GetIdentity(GetIdentityRequest) returns (GetIdentityResponse);
     rpc GetMetadata(GetMetadataRequest) returns (GetMetadataResponse);

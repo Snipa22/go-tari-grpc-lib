@@ -23,7 +23,6 @@ syntax = "proto3";
 
 package tari.rpc;
 option go_package = "github.com/Snipa22/go-tari-grpc-lib/tari_generated";
-
 import "google/protobuf/timestamp.proto";
 
 message NodeIdentity {

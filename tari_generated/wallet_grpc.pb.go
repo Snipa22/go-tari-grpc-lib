@@ -76,8 +76,8 @@ type WalletClient interface {
 	CheckForUpdates(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*SoftwareUpdate, error)
 	// The `Identify` RPC call returns the identity information of the wallet node.
 	// This includes:
-	// - **Public Key**: The wallet’s cryptographic public key.
-	// - **Public Address**: The wallet’s public address used to receive funds.
+	// - **Public Key**: The wallet's cryptographic public key.
+	// - **Public Address**: The wallet's public address used to receive funds.
 	// - **Node ID**: The unique identifier of the wallet node in the network.
 	//
 	// Example usage (JavaScript):
@@ -243,8 +243,6 @@ type WalletClient interface {
 	//	    }
 	//	  ]
 	//	}
-	//
-	// ```
 	Transfer(ctx context.Context, in *TransferRequest, opts ...grpc.CallOption) (*TransferResponse, error)
 	// Returns the transaction details for the given transaction IDs.
 	//
@@ -296,8 +294,6 @@ type WalletClient interface {
 	//	    }
 	//	  ]
 	//	}
-	//
-	// ```
 	GetTransactionInfo(ctx context.Context, in *GetTransactionInfoRequest, opts ...grpc.CallOption) (*GetTransactionInfoResponse, error)
 	// ### Example JavaScript gRPC client usage:
 	//
@@ -342,6 +338,59 @@ type WalletClient interface {
 	//
 	// ```
 	GetCompletedTransactions(ctx context.Context, in *GetCompletedTransactionsRequest, opts ...grpc.CallOption) (Wallet_GetCompletedTransactionsClient, error)
+	// Returns all transactions that were mined at a specific block height.
+	//
+	// The `GetBlockHeightTransactions` call retrieves all wallet transactions that were mined
+	// at the specified block height. The response includes all transactions in a single response,
+	// with each transaction including details such as status, direction, amount,
+	// fees, and associated metadata.
+	//
+	// ### Request Parameters:
+	//
+	// - `block_height` (required):
+	//   - **Type**: `uint64`
+	//   - **Description**: The specific block height to fetch transactions for.
+	//   - **Restrictions**:
+	//   - Must be a valid block height (greater than 0).
+	//   - If the block height is beyond the current chain height, no transactions will be returned.
+	//
+	// ### Example JavaScript gRPC client usage:
+	//
+	// ```javascript
+	//
+	//	const request = {
+	//	  block_height: 1523493
+	//	};
+	//
+	// const response = await client.getBlockHeightTransactions(request);
+	// console.log(response.transactions);
+	// ```
+	//
+	// ### Sample JSON Response:
+	//
+	// ```json
+	//
+	//	{
+	//	  "transactions": [
+	//	    {
+	//	      "tx_id": 12345,
+	//	      "source_address": "0x1234abcd...",
+	//	      "dest_address": "0x5678efgh...",
+	//	      "status": "TRANSACTION_STATUS_MINED_CONFIRMED",
+	//	      "direction": "TRANSACTION_DIRECTION_INBOUND",
+	//	      "amount": 500000,
+	//	      "fee": 20,
+	//	      "is_cancelled": false,
+	//	      "excess_sig": "0xabcdef...",
+	//	      "timestamp": 1681234567,
+	//	      "payment_id": "0xdeadbeef...",
+	//	      "mined_in_block_height": 1523493
+	//	    }
+	//	  ]
+	//	}
+	//
+	// ```
+	GetBlockHeightTransactions(ctx context.Context, in *GetBlockHeightTransactionsRequest, opts ...grpc.CallOption) (*GetBlockHeightTransactionsResponse, error)
 	// Returns the wallet balance details.
 	//
 	// The `GetBalance` call retrieves the current balance status of the wallet,
@@ -537,7 +586,7 @@ type WalletClient interface {
 	ImportUtxos(ctx context.Context, in *ImportUtxosRequest, opts ...grpc.CallOption) (*ImportUtxosResponse, error)
 	// Returns the wallet's current network connectivity status.
 	//
-	// The `GetNetworkStatus` call provides a snapshot of the wallet’s connection to the Tari network,
+	// The `GetNetworkStatus` call provides a snapshot of the wallet's connection to the Tari network,
 	// including whether it is online, the number of active peer connections, and the average latency
 	// to the configured base node.
 	//
@@ -802,7 +851,7 @@ type WalletClient interface {
 	//
 	// The `ClaimShaAtomicSwapTransaction` call allows the user to unlock and claim funds from
 	// a hash-time-locked contract (HTLC) by supplying the correct pre-image that matches a
-	// previously committed SHA-256 hash. This pre-image proves the user’s knowledge of the
+	// previously committed SHA-256 hash. This pre-image proves the user's knowledge of the
 	// secret required to spend the output.
 	//
 	// ### Request Parameters:
@@ -968,6 +1017,7 @@ type WalletClient interface {
 	// ```
 	StreamTransactionEvents(ctx context.Context, in *TransactionEventRequest, opts ...grpc.CallOption) (Wallet_StreamTransactionEventsClient, error)
 	RegisterValidatorNode(ctx context.Context, in *RegisterValidatorNodeRequest, opts ...grpc.CallOption) (*RegisterValidatorNodeResponse, error)
+	ImportTransactions(ctx context.Context, in *ImportTransactionsRequest, opts ...grpc.CallOption) (*ImportTransactionsResponse, error)
 }
 
 type walletClient struct {
@@ -1098,6 +1148,15 @@ func (x *walletGetCompletedTransactionsClient) Recv() (*GetCompletedTransactions
 		return nil, err
 	}
 	return m, nil
+}
+
+func (c *walletClient) GetBlockHeightTransactions(ctx context.Context, in *GetBlockHeightTransactionsRequest, opts ...grpc.CallOption) (*GetBlockHeightTransactionsResponse, error) {
+	out := new(GetBlockHeightTransactionsResponse)
+	err := c.cc.Invoke(ctx, "/tari.rpc.Wallet/GetBlockHeightTransactions", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *walletClient) GetBalance(ctx context.Context, in *GetBalanceRequest, opts ...grpc.CallOption) (*GetBalanceResponse, error) {
@@ -1276,6 +1335,15 @@ func (c *walletClient) RegisterValidatorNode(ctx context.Context, in *RegisterVa
 	return out, nil
 }
 
+func (c *walletClient) ImportTransactions(ctx context.Context, in *ImportTransactionsRequest, opts ...grpc.CallOption) (*ImportTransactionsResponse, error) {
+	out := new(ImportTransactionsResponse)
+	err := c.cc.Invoke(ctx, "/tari.rpc.Wallet/ImportTransactions", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // WalletServer is the server API for Wallet service.
 // All implementations must embed UnimplementedWalletServer
 // for forward compatibility
@@ -1339,8 +1407,8 @@ type WalletServer interface {
 	CheckForUpdates(context.Context, *Empty) (*SoftwareUpdate, error)
 	// The `Identify` RPC call returns the identity information of the wallet node.
 	// This includes:
-	// - **Public Key**: The wallet’s cryptographic public key.
-	// - **Public Address**: The wallet’s public address used to receive funds.
+	// - **Public Key**: The wallet's cryptographic public key.
+	// - **Public Address**: The wallet's public address used to receive funds.
 	// - **Node ID**: The unique identifier of the wallet node in the network.
 	//
 	// Example usage (JavaScript):
@@ -1506,8 +1574,6 @@ type WalletServer interface {
 	//	    }
 	//	  ]
 	//	}
-	//
-	// ```
 	Transfer(context.Context, *TransferRequest) (*TransferResponse, error)
 	// Returns the transaction details for the given transaction IDs.
 	//
@@ -1559,8 +1625,6 @@ type WalletServer interface {
 	//	    }
 	//	  ]
 	//	}
-	//
-	// ```
 	GetTransactionInfo(context.Context, *GetTransactionInfoRequest) (*GetTransactionInfoResponse, error)
 	// ### Example JavaScript gRPC client usage:
 	//
@@ -1605,6 +1669,59 @@ type WalletServer interface {
 	//
 	// ```
 	GetCompletedTransactions(*GetCompletedTransactionsRequest, Wallet_GetCompletedTransactionsServer) error
+	// Returns all transactions that were mined at a specific block height.
+	//
+	// The `GetBlockHeightTransactions` call retrieves all wallet transactions that were mined
+	// at the specified block height. The response includes all transactions in a single response,
+	// with each transaction including details such as status, direction, amount,
+	// fees, and associated metadata.
+	//
+	// ### Request Parameters:
+	//
+	// - `block_height` (required):
+	//   - **Type**: `uint64`
+	//   - **Description**: The specific block height to fetch transactions for.
+	//   - **Restrictions**:
+	//   - Must be a valid block height (greater than 0).
+	//   - If the block height is beyond the current chain height, no transactions will be returned.
+	//
+	// ### Example JavaScript gRPC client usage:
+	//
+	// ```javascript
+	//
+	//	const request = {
+	//	  block_height: 1523493
+	//	};
+	//
+	// const response = await client.getBlockHeightTransactions(request);
+	// console.log(response.transactions);
+	// ```
+	//
+	// ### Sample JSON Response:
+	//
+	// ```json
+	//
+	//	{
+	//	  "transactions": [
+	//	    {
+	//	      "tx_id": 12345,
+	//	      "source_address": "0x1234abcd...",
+	//	      "dest_address": "0x5678efgh...",
+	//	      "status": "TRANSACTION_STATUS_MINED_CONFIRMED",
+	//	      "direction": "TRANSACTION_DIRECTION_INBOUND",
+	//	      "amount": 500000,
+	//	      "fee": 20,
+	//	      "is_cancelled": false,
+	//	      "excess_sig": "0xabcdef...",
+	//	      "timestamp": 1681234567,
+	//	      "payment_id": "0xdeadbeef...",
+	//	      "mined_in_block_height": 1523493
+	//	    }
+	//	  ]
+	//	}
+	//
+	// ```
+	GetBlockHeightTransactions(context.Context, *GetBlockHeightTransactionsRequest) (*GetBlockHeightTransactionsResponse, error)
 	// Returns the wallet balance details.
 	//
 	// The `GetBalance` call retrieves the current balance status of the wallet,
@@ -1800,7 +1917,7 @@ type WalletServer interface {
 	ImportUtxos(context.Context, *ImportUtxosRequest) (*ImportUtxosResponse, error)
 	// Returns the wallet's current network connectivity status.
 	//
-	// The `GetNetworkStatus` call provides a snapshot of the wallet’s connection to the Tari network,
+	// The `GetNetworkStatus` call provides a snapshot of the wallet's connection to the Tari network,
 	// including whether it is online, the number of active peer connections, and the average latency
 	// to the configured base node.
 	//
@@ -2065,7 +2182,7 @@ type WalletServer interface {
 	//
 	// The `ClaimShaAtomicSwapTransaction` call allows the user to unlock and claim funds from
 	// a hash-time-locked contract (HTLC) by supplying the correct pre-image that matches a
-	// previously committed SHA-256 hash. This pre-image proves the user’s knowledge of the
+	// previously committed SHA-256 hash. This pre-image proves the user's knowledge of the
 	// secret required to spend the output.
 	//
 	// ### Request Parameters:
@@ -2231,6 +2348,7 @@ type WalletServer interface {
 	// ```
 	StreamTransactionEvents(*TransactionEventRequest, Wallet_StreamTransactionEventsServer) error
 	RegisterValidatorNode(context.Context, *RegisterValidatorNodeRequest) (*RegisterValidatorNodeResponse, error)
+	ImportTransactions(context.Context, *ImportTransactionsRequest) (*ImportTransactionsResponse, error)
 	mustEmbedUnimplementedWalletServer()
 }
 
@@ -2270,6 +2388,9 @@ func (UnimplementedWalletServer) GetTransactionInfo(context.Context, *GetTransac
 }
 func (UnimplementedWalletServer) GetCompletedTransactions(*GetCompletedTransactionsRequest, Wallet_GetCompletedTransactionsServer) error {
 	return status.Errorf(codes.Unimplemented, "method GetCompletedTransactions not implemented")
+}
+func (UnimplementedWalletServer) GetBlockHeightTransactions(context.Context, *GetBlockHeightTransactionsRequest) (*GetBlockHeightTransactionsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetBlockHeightTransactions not implemented")
 }
 func (UnimplementedWalletServer) GetBalance(context.Context, *GetBalanceRequest) (*GetBalanceResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetBalance not implemented")
@@ -2321,6 +2442,9 @@ func (UnimplementedWalletServer) StreamTransactionEvents(*TransactionEventReques
 }
 func (UnimplementedWalletServer) RegisterValidatorNode(context.Context, *RegisterValidatorNodeRequest) (*RegisterValidatorNodeResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RegisterValidatorNode not implemented")
+}
+func (UnimplementedWalletServer) ImportTransactions(context.Context, *ImportTransactionsRequest) (*ImportTransactionsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ImportTransactions not implemented")
 }
 func (UnimplementedWalletServer) mustEmbedUnimplementedWalletServer() {}
 
@@ -2534,6 +2658,24 @@ type walletGetCompletedTransactionsServer struct {
 
 func (x *walletGetCompletedTransactionsServer) Send(m *GetCompletedTransactionsResponse) error {
 	return x.ServerStream.SendMsg(m)
+}
+
+func _Wallet_GetBlockHeightTransactions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetBlockHeightTransactionsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServer).GetBlockHeightTransactions(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/tari.rpc.Wallet/GetBlockHeightTransactions",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServer).GetBlockHeightTransactions(ctx, req.(*GetBlockHeightTransactionsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _Wallet_GetBalance_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -2845,6 +2987,24 @@ func _Wallet_RegisterValidatorNode_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Wallet_ImportTransactions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ImportTransactionsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServer).ImportTransactions(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/tari.rpc.Wallet/ImportTransactions",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServer).ImportTransactions(ctx, req.(*ImportTransactionsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _Wallet_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "tari.rpc.Wallet",
 	HandlerType: (*WalletServer)(nil),
@@ -2888,6 +3048,10 @@ var _Wallet_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetTransactionInfo",
 			Handler:    _Wallet_GetTransactionInfo_Handler,
+		},
+		{
+			MethodName: "GetBlockHeightTransactions",
+			Handler:    _Wallet_GetBlockHeightTransactions_Handler,
 		},
 		{
 			MethodName: "GetBalance",
@@ -2952,6 +3116,10 @@ var _Wallet_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RegisterValidatorNode",
 			Handler:    _Wallet_RegisterValidatorNode_Handler,
+		},
+		{
+			MethodName: "ImportTransactions",
+			Handler:    _Wallet_ImportTransactions_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
