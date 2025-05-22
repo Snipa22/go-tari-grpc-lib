@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.2.0](https://github.com/Snipa22/go-tari-grpc-lib/compare/v2.1.0...v2.2.0) (2025-05-22)
+
+
+### Features
+
+* **generated:** new tari protos ([1f23fae](https://github.com/Snipa22/go-tari-grpc-lib/commit/1f23fae4906f8cc9f70c8e1d2019b0831f5e9156))
+
 ## [2.1.0](https://github.com/Snipa22/go-tari-grpc-lib/compare/v2.0.2...v2.1.0) (2025-05-22)
 
 
