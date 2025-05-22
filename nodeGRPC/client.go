@@ -119,6 +119,17 @@ func GetBlockByHeight(blockIDs []uint64) ([]*tari_generated.Block, error) {
 	}
 }
 
+// GetHeaderByHash wraps the GRPC call of the same name.
+func GetHeaderByHash(blockHash []byte) (*tari_generated.BlockHeaderResponse, error) {
+	conn, err := getBaseConnection()
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Close()
+	client := tari_generated.NewBaseNodeClient(conn)
+	return client.GetHeaderByHash(context.Background(), &tari_generated.GetHeaderByHashRequest{Hash: blockHash})
+}
+
 // SubmitBlock sends blocks to the daemon for processing
 func SubmitBlock(requestData *tari_generated.Block) (*tari_generated.SubmitBlockResponse, error) {
 	conn, err := getBaseConnection()
