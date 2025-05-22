@@ -2,7 +2,6 @@ package walletGRPC
 
 import (
 	"context"
-	"flag"
 	"github.com/Snipa22/go-tari-grpc-lib/v2/tari_generated"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -18,7 +17,6 @@ func InitWalletGRPC(walletAddress string) {
 // getWalletConnection builds the connection so we can init the BaseWalletClient, it does NOT close the connection, so
 // we need to close the connection down stream.
 func getWalletConnection() (*grpc.ClientConn, error) {
-	flag.Parse()
 	var opts []grpc.DialOption
 	opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	conn, err := grpc.NewClient(grpcWalletAddress, opts...)

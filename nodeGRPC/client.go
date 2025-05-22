@@ -2,7 +2,6 @@ package nodeGRPC
 
 import (
 	"context"
-	"flag"
 	"github.com/Snipa22/go-tari-grpc-lib/v2/tari_generated"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -29,7 +28,6 @@ func InitNodeGRPC(nodeAddress string) {
 // getBaseConnection builds the connection so we can init the BaseNodeClient, it does NOT close the connection, so we
 // need to close the connection down stream.
 func getBaseConnection() (*grpc.ClientConn, error) {
-	flag.Parse()
 	var opts []grpc.DialOption
 	opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	conn, err := grpc.NewClient(grpcNodeAddress, opts...)
