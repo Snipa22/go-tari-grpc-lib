@@ -68,6 +68,7 @@ func main() {
 								return -1
 							}, "RandomX_"+string(txExtra))
 							results[poolID] = append(results[poolID], block.Header.Height)
+							break
 						} else {
 							results["RandomX_unknown_no_tx_extra"] = append(results["RandomX_unknown_no_tx_extra"], block.Header.Height)
 							continue
@@ -98,8 +99,8 @@ func main() {
 							}
 							return -1
 						}, "SHA3X_"+string(txExtra[0:12]))
-
 						results[poolID] = append(results[poolID], block.Header.Height)
+						break
 					} else {
 						results["SHA3X_unknown_no_tx_extra"] = append(results["unknown_no_tx_extra"], block.Header.Height)
 						continue
