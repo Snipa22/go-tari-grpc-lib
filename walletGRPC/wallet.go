@@ -92,3 +92,14 @@ func SubmitCoinSplitRequest(splitAmt int, numSplits int) (*tari_generated.CoinSp
 		PaymentId:      nil,
 	})
 }
+
+// GetBalances wraps the GetBalances GRPC call
+func GetBalances() (*tari_generated.GetBalanceResponse, error) {
+	conn, err := getWalletConnection()
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Close()
+	client := tari_generated.NewWalletClient(conn)
+	return client.GetBalance(context.Background(), &tari_generated.GetBalanceRequest{})
+}
