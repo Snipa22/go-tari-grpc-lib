@@ -47,9 +47,16 @@ func main() {
 			}
 			if block.Header.Pow.GetPowAlgo() == 0 {
 				outputs := block.Body.GetOutputs()
-				if len(outputs) > 0 {
-					features := outputs[0].GetFeatures()
+				if len(outputs) == 0 {
+					results["RandomX_unknown_no_output"] = append(results["RandomX_unknown_no_output"], block.Header.Height)
+					continue
+				}
+				for _, output := range outputs {
+					features := output.GetFeatures()
 					if features != nil {
+						if features.OutputType != 1 {
+							continue
+						}
 						txExtra := features.GetCoinbaseExtra()
 						if txExtra != nil {
 							poolID := strings.Map(func(r rune) rune {
@@ -67,16 +74,20 @@ func main() {
 						results["RandomX_unknown_no_features"] = append(results["RandomX_unknown_no_features"], block.Header.Height)
 						continue
 					}
-				} else {
-					results["RandomX_unknown_no_output"] = append(results["RandomX_unknown_no_output"], block.Header.Height)
-					continue
 				}
 				continue
 			}
 			outputs := block.Body.GetOutputs()
-			if len(outputs) > 0 {
-				features := outputs[0].GetFeatures()
+			if len(outputs) == 0 {
+				results["SHA3X_unknown_no_output"] = append(results["unknown_no_output"], block.Header.Height)
+				continue
+			}
+			for _, output := range outputs {
+				features := output.GetFeatures()
 				if features != nil {
+					if features.OutputType != 1 {
+						continue
+					}
 					txExtra := features.GetCoinbaseExtra()
 					if txExtra != nil {
 						poolID := strings.Map(func(r rune) rune {
@@ -95,9 +106,6 @@ func main() {
 					results["SHA3X_unknown_no_features"] = append(results["unknown_no_features"], block.Header.Height)
 					continue
 				}
-			} else {
-				results["SHA3X_unknown_no_output"] = append(results["unknown_no_output"], block.Header.Height)
-				continue
 			}
 		}
 		if start >= end {
