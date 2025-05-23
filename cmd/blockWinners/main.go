@@ -20,7 +20,9 @@ func makeRange(min uint64, max uint64) []uint64 {
 
 func main() {
 	depthPtr := flag.Int("depth", 100, "an int")
+	nodeGRPCPtr := flag.String("base-node-grpc-address", "node-pool.tari.jagtech.io:18102", "Address for the base-node, defaults to Impala's public pool")
 	flag.Parse()
+	nodeGRPC.InitNodeGRPC(*nodeGRPCPtr)
 	tipData, err := nodeGRPC.GetTipInfo()
 	if err != nil {
 		log.Fatal(err)
