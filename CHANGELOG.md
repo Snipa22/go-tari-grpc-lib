@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.3.0](https://github.com/Snipa22/go-tari-grpc-lib/compare/v2.2.1...v2.3.0) (2025-05-23)
+
+
+### Features
+
+* **blockWinners:** scan for coinbases ([3b167b5](https://github.com/Snipa22/go-tari-grpc-lib/commit/3b167b59252dc613725ebd79cf082a44e6eae8a3))
+* **waller:** add balance exporter ([93c9c45](https://github.com/Snipa22/go-tari-grpc-lib/commit/93c9c45a8f596cf44049e515516975b1c899b710))
+
+
+### Bug Fixes
+
+* **blockWinners:** break to exit ([ca60e63](https://github.com/Snipa22/go-tari-grpc-lib/commit/ca60e63a0887c6e85afcd93bd3249ac2d7116745))
+
 ## [2.2.1](https://github.com/Snipa22/go-tari-grpc-lib/compare/v2.2.0...v2.2.1) (2025-05-22)
 
 
