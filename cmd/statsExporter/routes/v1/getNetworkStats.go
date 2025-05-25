@@ -40,7 +40,7 @@ func GetNetworkStats(c *gin.Context) {
 		returnStruct.CurBlockReward = rxtBT.MinerData.Reward
 	}
 	if sha3xBT, _ := nodeGRPC.GetBlockTemplate(&tari_generated.PowAlgo{PowAlgo: tari_generated.PowAlgo_POW_ALGOS_SHA3X}); sha3xBT != nil {
-		returnStruct.RXMDiff = sha3xBT.MinerData.TargetDifficulty
+		returnStruct.Sha3XDiff = sha3xBT.MinerData.TargetDifficulty
 		returnStruct.CurBlockReward = sha3xBT.MinerData.Reward
 	}
 	c.JSON(200, returnStruct)
