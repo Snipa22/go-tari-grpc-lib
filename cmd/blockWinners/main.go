@@ -47,10 +47,11 @@ func main() {
 			if block.Header.Height > start {
 				start = block.Header.Height
 			}
+			outputs := block.Body.GetOutputs()
 			if block.Header.Pow.GetPowAlgo() == 0 {
-				outputs := block.Body.GetOutputs()
+				// RandomX merge mine
 				if len(outputs) == 0 {
-					results["RandomX_unknown_no_output"] = append(results["RandomX_unknown_no_output"], block.Header.Height)
+					results["RXM_unknown_no_output"] = append(results["RXM_unknown_no_output"], block.Header.Height)
 					continue
 				}
 				for _, output := range outputs {
@@ -66,48 +67,81 @@ func main() {
 									return r
 								}
 								return -1
-							}, "RandomX_"+string(txExtra))
+							}, "RXM_"+string(txExtra))
 							results[poolID] = append(results[poolID], block.Header.Height)
 							break
 						} else {
-							results["RandomX_unknown_no_tx_extra"] = append(results["RandomX_unknown_no_tx_extra"], block.Header.Height)
+							results["RXM_unknown_no_tx_extra"] = append(results["RXM_unknown_no_tx_extra"], block.Header.Height)
 							continue
 						}
 					} else {
-						results["RandomX_unknown_no_features"] = append(results["RandomX_unknown_no_features"], block.Header.Height)
+						results["RXM_unknown_no_features"] = append(results["RXM_unknown_no_features"], block.Header.Height)
 						continue
 					}
 				}
 				continue
-			}
-			outputs := block.Body.GetOutputs()
-			if len(outputs) == 0 {
-				results["SHA3X_unknown_no_output"] = append(results["unknown_no_output"], block.Header.Height)
-				continue
-			}
-			for _, output := range outputs {
-				features := output.GetFeatures()
-				if features != nil {
-					if features.OutputType != 1 {
-						continue
-					}
-					txExtra := features.GetCoinbaseExtra()
-					if txExtra != nil {
-						poolID := strings.Map(func(r rune) rune {
-							if unicode.IsPrint(r) && r < 129 {
-								return r
-							}
-							return -1
-						}, "SHA3X_"+string(txExtra[0:12]))
-						results[poolID] = append(results[poolID], block.Header.Height)
-						break
-					} else {
-						results["SHA3X_unknown_no_tx_extra"] = append(results["unknown_no_tx_extra"], block.Header.Height)
-						continue
-					}
-				} else {
-					results["SHA3X_unknown_no_features"] = append(results["unknown_no_features"], block.Header.Height)
+			} else if block.Header.Pow.GetPowAlgo() == 2 {
+				// RandomX Tari
+				if len(outputs) == 0 {
+					results["RXT_unknown_no_output"] = append(results["RXT_unknown_no_output"], block.Header.Height)
 					continue
+				}
+				for _, output := range outputs {
+					features := output.GetFeatures()
+					if features != nil {
+						if features.OutputType != 1 {
+							continue
+						}
+						txExtra := features.GetCoinbaseExtra()
+						if txExtra != nil {
+							poolID := strings.Map(func(r rune) rune {
+								if unicode.IsPrint(r) {
+									return r
+								}
+								return -1
+							}, "RXT_"+string(txExtra))
+							results[poolID] = append(results[poolID], block.Header.Height)
+							break
+						} else {
+							results["RXT_unknown_no_tx_extra"] = append(results["RXT_unknown_no_tx_extra"], block.Header.Height)
+							continue
+						}
+					} else {
+						results["RXT_unknown_no_features"] = append(results["RXT_unknown_no_features"], block.Header.Height)
+						continue
+					}
+				}
+				continue
+			} else {
+				// Sha3x is ID 1, but using it as a catch here.
+				if len(outputs) == 0 {
+					results["SHA3X_unknown_no_output"] = append(results["unknown_no_output"], block.Header.Height)
+					continue
+				}
+				for _, output := range outputs {
+					features := output.GetFeatures()
+					if features != nil {
+						if features.OutputType != 1 {
+							continue
+						}
+						txExtra := features.GetCoinbaseExtra()
+						if txExtra != nil {
+							poolID := strings.Map(func(r rune) rune {
+								if unicode.IsPrint(r) && r < 129 {
+									return r
+								}
+								return -1
+							}, "SHA3X_"+string(txExtra[0:12]))
+							results[poolID] = append(results[poolID], block.Header.Height)
+							break
+						} else {
+							results["SHA3X_unknown_no_tx_extra"] = append(results["unknown_no_tx_extra"], block.Header.Height)
+							continue
+						}
+					} else {
+						results["SHA3X_unknown_no_features"] = append(results["unknown_no_features"], block.Header.Height)
+						continue
+					}
 				}
 			}
 		}
