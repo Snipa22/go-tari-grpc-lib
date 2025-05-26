@@ -99,7 +99,7 @@ func main() {
 						txExtra := features.GetCoinbaseExtra()
 						if txExtra != nil {
 							if strings.Contains(string(txExtra), "WUFJagtech") {
-								results["RXM_"+string(txExtra[0:12])] = append(results["RXM_"+string(txExtra[0:12])], block.Header.Height)
+								results["RXT_"+string(txExtra[0:12])] = append(results["RXM_"+string(txExtra[0:12])], block.Header.Height)
 								break
 							}
 							poolID := strings.Map(func(r rune) rune {
