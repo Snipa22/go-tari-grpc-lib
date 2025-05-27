@@ -1,5 +1,26 @@
 # Changelog
 
+## [2.3.0](https://github.com/Snipa22/go-tari-grpc-lib/compare/v2.2.1...v2.3.0) (2025-05-27)
+
+
+### Features
+
+* **blockWinners:** scan for coinbases ([3b167b5](https://github.com/Snipa22/go-tari-grpc-lib/commit/3b167b59252dc613725ebd79cf082a44e6eae8a3))
+* **statsExporter:** add new stats exporter ([a465a3a](https://github.com/Snipa22/go-tari-grpc-lib/commit/a465a3a0f0244fb21ad659ebc44d0d86b33473ff))
+* **waller:** add balance exporter ([93c9c45](https://github.com/Snipa22/go-tari-grpc-lib/commit/93c9c45a8f596cf44049e515516975b1c899b710))
+* **walletGRPC:** add get txinfo by id ([e336f99](https://github.com/Snipa22/go-tari-grpc-lib/commit/e336f99e4acfe6b1d39e8f35d24b5844ba284068))
+
+
+### Bug Fixes
+
+* **blockWinners:** break to exit ([ca60e63](https://github.com/Snipa22/go-tari-grpc-lib/commit/ca60e63a0887c6e85afcd93bd3249ac2d7116745))
+* **blockWinners:** correct the bucket ([d82586b](https://github.com/Snipa22/go-tari-grpc-lib/commit/d82586b05ef7e8eeb9cd62e33c1055cfaebe8c5a))
+* **blockWinners:** make sure the append bucket is right ([d670627](https://github.com/Snipa22/go-tari-grpc-lib/commit/d670627b5274d2598e39e115cb3a61ed4df5216b))
+* **blockWinners:** pickup the pool shim ([e830763](https://github.com/Snipa22/go-tari-grpc-lib/commit/e830763192f4a79cf3ee51255a5ece4a2195893e))
+* **blockWinners:** update for RXT ([b2e0973](https://github.com/Snipa22/go-tari-grpc-lib/commit/b2e097388d0919426d0376bf894c4103dfe476aa))
+* **getNetworkStats:** rxt bt goes into rxt diff ([ca8b549](https://github.com/Snipa22/go-tari-grpc-lib/commit/ca8b5499b46276f3f6dd9ddff7646e82d9c0d68b))
+* **statsExporter:** export sha3x to the right var ([0d2a587](https://github.com/Snipa22/go-tari-grpc-lib/commit/0d2a5870efc7e9d92259c285b329211b41a5482f))
+
 ## [2.2.1](https://github.com/Snipa22/go-tari-grpc-lib/compare/v2.2.0...v2.2.1) (2025-05-22)
 
 
