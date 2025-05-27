@@ -103,3 +103,20 @@ func GetBalances() (*tari_generated.GetBalanceResponse, error) {
 	client := tari_generated.NewWalletClient(conn)
 	return client.GetBalance(context.Background(), &tari_generated.GetBalanceRequest{})
 }
+
+// GetTransactionInfoByID wraps the GetTransactionInfo call in GRPC, one at a time
+func GetTransactionInfoByID(transactionID uint64) (*tari_generated.TransactionInfo, error) {
+	conn, err := getWalletConnection()
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Close()
+	client := tari_generated.NewWalletClient(conn)
+	txns, err := client.GetTransactionInfo(context.Background(), &tari_generated.GetTransactionInfoRequest{
+		TransactionIds: []uint64{transactionID},
+	})
+	if err != nil || len(txns.Transactions) == 0 {
+		return nil, err
+	}
+	return txns.Transactions[0], nil
+}
