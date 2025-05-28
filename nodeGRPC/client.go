@@ -158,3 +158,14 @@ func GetNetworkDiff(height uint64) (*tari_generated.NetworkDifficultyResponse, e
 	}
 	return diffClient.Recv()
 }
+
+// GetNodeIdentity returns a list of valid rust identities for an opened GRPC node
+func GetNodeIdentity() (*tari_generated.NodeIdentity, error) {
+	conn, err := getBaseConnection()
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Close()
+	client := tari_generated.NewBaseNodeClient(conn)
+	return client.Identify(context.Background(), nil)
+}
