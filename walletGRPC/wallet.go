@@ -120,3 +120,23 @@ func GetTransactionInfoByID(transactionID uint64) (*tari_generated.TransactionIn
 	}
 	return txns.Transactions[0], nil
 }
+
+func RevalidateAllTransactions() (*tari_generated.RevalidateResponse, error) {
+	conn, err := getWalletConnection()
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Close()
+	client := tari_generated.NewWalletClient(conn)
+	return client.RevalidateAllTransactions(context.Background(), &tari_generated.RevalidateRequest{})
+}
+
+func ValidateAllTransactions() (*tari_generated.ValidateResponse, error) {
+	conn, err := getWalletConnection()
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Close()
+	client := tari_generated.NewWalletClient(conn)
+	return client.ValidateAllTransactions(context.Background(), &tari_generated.ValidateRequest{})
+}
