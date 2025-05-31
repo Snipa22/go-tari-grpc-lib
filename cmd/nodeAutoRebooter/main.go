@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/Snipa22/go-tari-grpc-lib/v2/nodeGRPC"
-	"github.com/coreos/go-systemd/dbus"
+	"github.com/coreos/go-systemd/v22/dbus"
 )
 
 // Check against a list of nodes, if our local height is 5 under the highest, then reboot it via dbus
@@ -36,17 +36,18 @@ func main() {
 	if val, _ := nodeGRPC.GetTipInfo(); val != nil {
 		if val.Metadata.BestBlockHeight < bestHeight-5 {
 			// Perform reboot va dbus
+			ctx := context.Background()
 			// Connect to systemd
 			// Specifically this will look DBUS_SYSTEM_BUS_ADDRESS environment variable
 			// For example: `unix:path=/run/dbus/system_bus_socket`
-			systemdConnection, err := dbus.NewSystemConnection()
+			systemdConnection, err := dbus.NewSystemConnectionContext(ctx)
 			if err != nil {
 				fmt.Printf("Failed to connect to systemd: %v\n", err)
 				panic(err)
 			}
 			defer systemdConnection.Close()
 			holderChan := make(chan string)
-			systemdConnection.RestartUnit("tari.service", "replace", holderChan)
+			systemdConnection.RestartUnitContext(ctx, "tari.service", "replace", holderChan)
 		}
 	}
 }
