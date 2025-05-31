@@ -10,12 +10,13 @@ import (
 )
 
 type NetworkStats struct {
-	BestBlockHeight uint64 `json:"best_block_height"`
-	BestBlockHash   string `json:"best_block_hash"`
-	RXMDiff         uint64 `json:"rxm_diff"`
-	RXTDiff         uint64 `json:"rxt_diff"`
-	Sha3XDiff       uint64 `json:"sha3x_diff"`
-	CurBlockReward  uint64 `json:"cur_block_reward"`
+	BestBlockHeight    uint64 `json:"best_block_height"`
+	BestBlockHash      string `json:"best_block_hash"`
+	RXMDiff            uint64 `json:"rxm_diff"`
+	RXTDiff            uint64 `json:"rxt_diff"`
+	Sha3XDiff          uint64 `json:"sha3x_diff"`
+	CurBlockReward     uint64 `json:"cur_block_reward"`
+	CurBlockRootReward uint64 `json:"cur_block_root_reward"`
 }
 
 func GetNetworkStats(c *gin.Context) {
@@ -29,6 +30,10 @@ func GetNetworkStats(c *gin.Context) {
 	returnStruct := NetworkStats{
 		BestBlockHeight: tipData.Metadata.BestBlockHeight,
 		BestBlockHash:   fmt.Sprintf("%x", tipData.Metadata.BestBlockHash),
+	}
+	// Get the root reward
+	if netState, _ := nodeGRPC.GetNetworkState(); netState != nil {
+		returnStruct.CurBlockRootReward = netState.Reward
 	}
 	// Get chain diffs
 	if rxmBT, _ := nodeGRPC.GetBlockTemplate(&tari_generated.PowAlgo{PowAlgo: tari_generated.PowAlgo_POW_ALGOS_RANDOMXM}); rxmBT != nil {
