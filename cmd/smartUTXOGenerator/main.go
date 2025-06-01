@@ -63,10 +63,17 @@ func main() {
 
 	milieu, _ = core.NewMilieu(nil, nil, &sentryURI)
 
+	checkAndSplitUTXOs()
+
 	// Build the cron spinner
 	c := cron.New()
-	_, _ = c.AddFunc("*/30 * * * *", func() {
+	_, _ = c.AddFunc("30 * * * *", func() {
 		checkAndSplitUTXOs()
 	})
 	c.Run()
+
+	// Idle loop!
+	for {
+		select {}
+	}
 }
