@@ -15,10 +15,12 @@ var sqliteDbPath = ""
 var milieu *core.Milieu
 
 func checkAndSplitUTXOs() {
+	milieu.Info("Starting UTXO Split")
 	sqliteDSN := fmt.Sprintf("file:%s?cache=shared&mode=ro", sqliteDbPath)
 	db, err := sql.Open("sqlite3", sqliteDSN)
 	if err != nil {
 		milieu.CaptureException(err)
+		milieu.Error(err.Error())
 		return
 	}
 	defer db.Close()
@@ -26,27 +28,34 @@ func checkAndSplitUTXOs() {
 	count := 0
 	if err = row.Scan(&count); err != nil {
 		milieu.CaptureException(err)
+		milieu.Error(err.Error())
 		return
 	}
 	db.Close()
+	milieu.Info(fmt.Sprintf("%v/%v UTXOs", count, utxoMinCount))
 	if uint64(count) < utxoMinCount {
 		balances, err := walletGRPC.GetBalances()
 		if err != nil {
 			milieu.CaptureException(err)
+			milieu.Error(err.Error())
 			return
 		}
 		splitValue := balances.AvailableBalance / 10 / (utxoMinCount * 2)
+		milieu.Info(fmt.Sprintf("Making %v UTXOs for %v XTM", splitValue, utxoMinCount*2))
 		_, err = walletGRPC.SubmitCoinSplitRequest(int(splitValue), int(utxoMinCount))
 		if err != nil {
 			milieu.CaptureException(err)
+			milieu.Error(err.Error())
 			return
 		}
 		_, err = walletGRPC.SubmitCoinSplitRequest(int(splitValue), int(utxoMinCount))
 		if err != nil {
 			milieu.CaptureException(err)
+			milieu.Error(err.Error())
 			return
 		}
 	}
+	milieu.Info("UTXO Split Complete")
 }
 
 func main() {
