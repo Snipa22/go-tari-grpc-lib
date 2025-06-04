@@ -6,6 +6,7 @@ require (
 	github.com/Snipa22/core-go-lib v1.2.0
 	github.com/coreos/go-systemd/v22 v22.5.0
 	github.com/gin-gonic/gin v1.10.1
+	github.com/mattn/go-sqlite3 v1.14.28
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/sirupsen/logrus v1.9.0
 	google.golang.org/grpc v1.72.0
