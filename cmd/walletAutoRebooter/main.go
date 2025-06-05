@@ -42,10 +42,12 @@ func main() {
 		return
 	}
 	shouldReboot := false
+	fmt.Printf("Wallet scanned height is %v/%v\n", walletState.ScannedHeight, bestHeight)
 	if walletState.ScannedHeight < bestHeight-10 {
 		shouldReboot = true
 	}
 	walletConnectivity, _ := walletGRPC.GetWalletConnectivity()
+	fmt.Printf("Wallet connectivity is %v\n", walletConnectivity)
 	if walletConnectivity.Status == 2 {
 		shouldReboot = true
 	}
