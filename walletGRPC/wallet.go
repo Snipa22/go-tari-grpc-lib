@@ -140,3 +140,25 @@ func ValidateAllTransactions() (*tari_generated.ValidateResponse, error) {
 	client := tari_generated.NewWalletClient(conn)
 	return client.ValidateAllTransactions(context.Background(), &tari_generated.ValidateRequest{})
 }
+
+// GetWalletState wraps the GetState call on the wallet GRPC
+func GetWalletState() (*tari_generated.GetStateResponse, error) {
+	conn, err := getWalletConnection()
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Close()
+	client := tari_generated.NewWalletClient(conn)
+	return client.GetState(context.Background(), &tari_generated.GetStateRequest{})
+}
+
+// GetWalletConnectivity wraps the CheckConnectivity call
+func GetWalletConnectivity() (*tari_generated.CheckConnectivityResponse, error) {
+	conn, err := getWalletConnection()
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Close()
+	client := tari_generated.NewWalletClient(conn)
+	return client.CheckConnectivity(context.Background(), &tari_generated.GetConnectivityRequest{})
+}
