@@ -134,12 +134,23 @@ func main() {
 						}
 						txExtra := features.GetCoinbaseExtra()
 						if txExtra != nil {
-							poolID := strings.Map(func(r rune) rune {
-								if unicode.IsPrint(r) && r < 129 {
-									return r
-								}
-								return -1
-							}, "SHA3X_"+string(txExtra[0:12]))
+							var poolID string
+							if len(txExtra) >= 12 {
+								poolID = strings.Map(func(r rune) rune {
+									if unicode.IsPrint(r) && r < 129 {
+										return r
+									}
+									return -1
+								}, "SHA3X_"+string(txExtra[0:12]))
+							} else {
+								poolID = strings.Map(func(r rune) rune {
+									if unicode.IsPrint(r) && r < 129 {
+										return r
+									}
+									return -1
+								}, "SHA3X_"+string(txExtra))
+							}
+
 							results[poolID] = append(results[poolID], block.Header.Height)
 							break
 						} else {
