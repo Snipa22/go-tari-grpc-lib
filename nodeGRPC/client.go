@@ -100,7 +100,7 @@ func GetBlockByHeight(blockIDs []uint64) ([]*tari_generated.Block, error) {
 	}
 	defer conn.Close()
 	client := tari_generated.NewBaseNodeClient(conn)
-	active_client, err := client.GetBlocks(context.Background(), &tari_generated.GetBlocksRequest{Heights: blockIDs})
+	active_client, err := client.GetBlocks(context.Background(), &tari_generated.GetBlocksRequest{Heights: blockIDs}, grpc.MaxCallRecvMsgSize(16*1024*1024))
 	if err != nil {
 		return nil, err
 	}
