@@ -2,8 +2,8 @@ package v1
 
 import (
 	"fmt"
-	core "github.com/Snipa22/core-go-lib/milieu"
-	"github.com/Snipa22/go-tari-grpc-lib/v2/cmd/statsExporter/support"
+	"github.com/Snipa22/go-tari-grpc-lib/v2/cmd/statsExporter/subsystems/blockTemplateCache"
+	"github.com/Snipa22/go-tari-grpc-lib/v2/cmd/statsExporter/subsystems/tipDataCache"
 	"github.com/Snipa22/go-tari-grpc-lib/v2/nodeGRPC"
 	"github.com/Snipa22/go-tari-grpc-lib/v2/tari_generated"
 	"github.com/gin-gonic/gin"
@@ -20,13 +20,7 @@ type NetworkStats struct {
 }
 
 func GetNetworkStats(c *gin.Context) {
-	milieu := c.MustGet("MILIEU").(core.Milieu)
-	tipData, err := nodeGRPC.GetTipInfo()
-	if err != nil {
-		c.JSON(500, support.ErrorResponse{Error: "Unable to get tip data"})
-		milieu.CaptureException(err)
-		return
-	}
+	tipData := tipDataCache.GetTipData()
 	returnStruct := NetworkStats{
 		BestBlockHeight: tipData.Metadata.BestBlockHeight,
 		BestBlockHash:   fmt.Sprintf("%x", tipData.Metadata.BestBlockHash),
@@ -36,15 +30,15 @@ func GetNetworkStats(c *gin.Context) {
 		returnStruct.CurBlockRootReward = netState.Reward
 	}
 	// Get chain diffs
-	if rxmBT, _ := nodeGRPC.GetBlockTemplate(&tari_generated.PowAlgo{PowAlgo: tari_generated.PowAlgo_POW_ALGOS_RANDOMXM}); rxmBT != nil {
+	if rxmBT := blockTemplateCache.GetBlockTemplateCache(tari_generated.PowAlgo_POW_ALGOS_RANDOMXM); rxmBT != nil {
 		returnStruct.RXMDiff = rxmBT.MinerData.TargetDifficulty
 		returnStruct.CurBlockReward = rxmBT.MinerData.Reward
 	}
-	if rxtBT, _ := nodeGRPC.GetBlockTemplate(&tari_generated.PowAlgo{PowAlgo: tari_generated.PowAlgo_POW_ALGOS_RANDOMXT}); rxtBT != nil {
+	if rxtBT := blockTemplateCache.GetBlockTemplateCache(tari_generated.PowAlgo_POW_ALGOS_RANDOMXT); rxtBT != nil {
 		returnStruct.RXTDiff = rxtBT.MinerData.TargetDifficulty
 		returnStruct.CurBlockReward = rxtBT.MinerData.Reward
 	}
-	if sha3xBT, _ := nodeGRPC.GetBlockTemplate(&tari_generated.PowAlgo{PowAlgo: tari_generated.PowAlgo_POW_ALGOS_SHA3X}); sha3xBT != nil {
+	if sha3xBT := blockTemplateCache.GetBlockTemplateCache(tari_generated.PowAlgo_POW_ALGOS_SHA3X); sha3xBT != nil {
 		returnStruct.Sha3XDiff = sha3xBT.MinerData.TargetDifficulty
 		returnStruct.CurBlockReward = sha3xBT.MinerData.Reward
 	}

@@ -6,9 +6,12 @@ import (
 	core "github.com/Snipa22/core-go-lib/milieu"
 	"github.com/Snipa22/core-go-lib/milieu/middleware"
 	v1 "github.com/Snipa22/go-tari-grpc-lib/v2/cmd/statsExporter/routes/v1"
+	"github.com/Snipa22/go-tari-grpc-lib/v2/cmd/statsExporter/subsystems/blockTemplateCache"
+	"github.com/Snipa22/go-tari-grpc-lib/v2/cmd/statsExporter/subsystems/tipDataCache"
 	"github.com/Snipa22/go-tari-grpc-lib/v2/nodeGRPC"
 	"github.com/Snipa22/go-tari-grpc-lib/v2/walletGRPC"
 	"github.com/gin-gonic/gin"
+	"github.com/robfig/cron/v3"
 	"github.com/sirupsen/logrus"
 	"log"
 	"net/http"
@@ -37,6 +40,20 @@ func main() {
 	if *debugEnabledPtr {
 		milieu.SetLogLevel(logrus.DebugLevel)
 	}
+
+	// Repeating task setup start
+	c := cron.New(cron.WithSeconds())
+
+	// Add tasks to cron
+	_, _ = c.AddFunc("* * * * * *", func() {
+		tipDataCache.UpdateTipData(milieu)
+	})
+
+	_, _ = c.AddFunc("* * * * * *", func() {
+		blockTemplateCache.UpdateBlockTemplateCache(milieu)
+	})
+
+	c.Start()
 
 	r := gin.Default()
 	r.Use(middleware.SetupMilieu(milieu))
