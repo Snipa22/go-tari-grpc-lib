@@ -164,12 +164,12 @@ func GetWalletConnectivity() (*tari_generated.CheckConnectivityResponse, error) 
 }
 
 // GetAddresses gets the addresses for the wallet
-func GetAddresses() (*tari_generated.GetAddressResponse, error) {
+func GetAddresses() (*tari_generated.GetCompleteAddressResponse, error) {
 	conn, err := getWalletConnection()
 	if err != nil {
 		return nil, err
 	}
 	defer conn.Close()
 	client := tari_generated.NewWalletClient(conn)
-	return client.GetAddress(context.Background(), nil)
+	return client.GetCompleteAddress(context.Background(), nil)
 }

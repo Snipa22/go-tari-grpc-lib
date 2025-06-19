@@ -43,8 +43,8 @@ func main() {
 		log.Fatal(err)
 	}
 	if resp.Results[0].IsSuccess {
-		fmt.Printf("Transfer from %v to %v for %v XTM complete\n", addresses.OneSidedAddress, *destAddressPtr, toSend/1000000)
+		fmt.Printf("Transfer from %v to %v for %v XTM complete\n", addresses.OneSidedAddressBase58, *destAddressPtr, toSend/1000000)
 	} else {
-		fmt.Printf("Transfer from %v to %v failed\n", addresses.OneSidedAddress, *destAddressPtr)
+		fmt.Printf("Transfer from %v to %v failed\n", addresses.OneSidedAddressBase58, *destAddressPtr)
 	}
 }
