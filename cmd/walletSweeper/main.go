@@ -16,6 +16,10 @@ func main() {
 		log.Fatal("Destination address is required")
 	}
 	walletGRPC.InitWalletGRPC(*walletGRPCAddressPtr)
+	addresses, err := walletGRPC.GetAddresses()
+	if err != nil {
+		log.Fatal(err)
+	}
 	balances, err := walletGRPC.GetBalances()
 	if err != nil {
 		log.Fatal(err)
@@ -26,7 +30,7 @@ func main() {
 		fmt.Println("Balance to send is less than 1 XTM, not sweeping.")
 		return
 	}
-	fmt.Printf("Sending %v uT to %v\n", toSend, *destAddressPtr)
+	// fmt.Printf("Sending %v uT to %v\n", toSend, *destAddressPtr)
 	resp, err := walletGRPC.SendTransactions([]*tari_generated.PaymentRecipient{
 		{
 			Address:     *destAddressPtr,
@@ -38,5 +42,9 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("Transactions sent successfully: %v, error if exists: %v\n", resp.Results[0].IsSuccess, resp.Results[0].FailureMessage)
+	if resp.Results[0].IsSuccess {
+		fmt.Printf("Transfer from %v to %v for %v XTM complete\n", addresses.OneSidedAddress, *destAddressPtr, toSend/1000000)
+	} else {
+		fmt.Printf("Transfer from %v to %v failed\n", addresses.OneSidedAddress, *destAddressPtr)
+	}
 }
