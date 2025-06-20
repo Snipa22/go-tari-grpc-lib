@@ -1,5 +1,32 @@
 # Changelog
 
+## [2.4.0](https://github.com/Snipa22/go-tari-grpc-lib/compare/v2.3.0...v2.4.0) (2025-06-20)
+
+
+### Features
+
+* **cmd:** add auto utxo gen ([1e26c75](https://github.com/Snipa22/go-tari-grpc-lib/commit/1e26c7584e66c2292f40f920104285f73c46c79a))
+* **cmd:** add auto wallet rebooter ([b13b882](https://github.com/Snipa22/go-tari-grpc-lib/commit/b13b8827d9ea35a897a63b57544724a532c1aa18))
+* **cmd:** add get node identity bin ([266120f](https://github.com/Snipa22/go-tari-grpc-lib/commit/266120f31ed082428428ece152e68c7353f625a6))
+* **cmd:** add node auto reboot ([00fa216](https://github.com/Snipa22/go-tari-grpc-lib/commit/00fa2162aba51af5025ed93ea6b7bb0ef6877660))
+* **cmd:** add wallet base node setter ([830e792](https://github.com/Snipa22/go-tari-grpc-lib/commit/830e7928be025cf518e4848e9dfc46637b6a78ac))
+* **cmd:** add wallet validator ([d75530c](https://github.com/Snipa22/go-tari-grpc-lib/commit/d75530c02725c693c3b64fceaf190d4f20fc24fa))
+* **cmd:** add walletSweeper ([e2e5538](https://github.com/Snipa22/go-tari-grpc-lib/commit/e2e553802eccb344c4db01a06ddb3d938105e140))
+* **getNetworkStats:** add root reward ([673aab4](https://github.com/Snipa22/go-tari-grpc-lib/commit/673aab49d81bf35f9abef5a6ba191785169729a8))
+* **walletGRPC:** add address grabber ([fa8f1b5](https://github.com/Snipa22/go-tari-grpc-lib/commit/fa8f1b5d26c5f7e929a9b076ce4778677b3db58f))
+* **walletSweeper:** safety checks ([00f4b29](https://github.com/Snipa22/go-tari-grpc-lib/commit/00f4b299f1eebb6c00a628a3bf9959dafe1e0811))
+
+
+### Bug Fixes
+
+* **blockWinners:** handle short ids ([5bd8687](https://github.com/Snipa22/go-tari-grpc-lib/commit/5bd8687b4bf75925ebaf2fc7975ecdf0110123b6))
+* **grpc:** allow larger response ([8be3791](https://github.com/Snipa22/go-tari-grpc-lib/commit/8be37918767f5676482ebc5782db78ce7ed2c933))
+* **smartutxo:** add state prints ([83cbd82](https://github.com/Snipa22/go-tari-grpc-lib/commit/83cbd82a05f211f7ed4a0aa50acafa382ee2d0a8))
+* **smartutxo:** inf-loop + run at startup ([ddc8276](https://github.com/Snipa22/go-tari-grpc-lib/commit/ddc82767ae427567d684b3ef24bbc519d23263d5))
+* **statsExporter:** Add caching to the system. ([d8e5eeb](https://github.com/Snipa22/go-tari-grpc-lib/commit/d8e5eeb9bea088b24d48d8ba287bddb214283e0f))
+* **walletbooter:** add debug logging ([810318d](https://github.com/Snipa22/go-tari-grpc-lib/commit/810318d5fa835968f23397479dba37d963a846bd))
+* **walletSweeper:** get addresses in base58 ([eb509fc](https://github.com/Snipa22/go-tari-grpc-lib/commit/eb509fc43c18073abed0020d130f3741a91aa747))
+
 ## [2.3.0](https://github.com/Snipa22/go-tari-grpc-lib/compare/v2.2.1...v2.3.0) (2025-05-27)
 
 
