@@ -173,3 +173,17 @@ func GetAddresses() (*tari_generated.GetCompleteAddressResponse, error) {
 	client := tari_generated.NewWalletClient(conn)
 	return client.GetCompleteAddress(context.Background(), nil)
 }
+
+// SetBaseNode sets the base node (The one that the wallet preferentially connects to)
+func SetBaseNode(nodePubKey string, nodeAddress string) (*tari_generated.SetBaseNodeResponse, error) {
+	conn, err := getWalletConnection()
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Close()
+	client := tari_generated.NewWalletClient(conn)
+	return client.SetBaseNode(context.Background(), &tari_generated.SetBaseNodeRequest{
+		PublicKeyHex: nodePubKey,
+		NetAddress:   nodeAddress,
+	})
+}
