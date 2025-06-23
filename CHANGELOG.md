@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.4.1](https://github.com/Snipa22/go-tari-grpc-lib/compare/v2.4.0...v2.4.1) (2025-06-23)
+
+
+### Bug Fixes
+
+* **walletGRPC:** use the get block height call ([6b3fed4](https://github.com/Snipa22/go-tari-grpc-lib/commit/6b3fed4b74a2262780aeb6d66b9b2afe6ed5a687))
+
 ## [2.4.0](https://github.com/Snipa22/go-tari-grpc-lib/compare/v2.3.0...v2.4.0) (2025-06-20)
 
 
