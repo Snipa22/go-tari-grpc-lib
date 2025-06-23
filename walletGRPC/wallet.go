@@ -53,16 +53,15 @@ func GetTransactionsInBlock(blockHeight uint64) ([]*tari_generated.TransactionIn
 	if blockHeight == 0 {
 		completedTxnsClient, err = client.GetCompletedTransactions(context.Background(), nil)
 	} else {
-		completedTxnsClient, err = client.GetCompletedTransactions(context.Background(), &tari_generated.GetCompletedTransactionsRequest{
-			BlockHeight: &tari_generated.BlockHeight{
-				BlockHeight: blockHeight,
-			},
+		getBlockHeightTxns, err := client.GetBlockHeightTransactions(context.Background(), &tari_generated.GetBlockHeightTransactionsRequest{
+			BlockHeight: blockHeight,
 		})
+		if err != nil {
+			return nil, err
+		}
+		return getBlockHeightTxns.Transactions, nil
 	}
 
-	if err != nil {
-		return nil, err
-	}
 	resp := make([]*tari_generated.TransactionInfo, 0)
 	for {
 		txnResp, err := completedTxnsClient.Recv()
