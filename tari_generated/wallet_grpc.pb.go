@@ -205,6 +205,8 @@ type WalletClient interface {
 	//
 	// ```
 	GetCompleteAddress(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetCompleteAddressResponse, error)
+	PrepareOneSidedTransactionForSigning(ctx context.Context, in *PrepareOneSidedTransactionForSigningRequest, opts ...grpc.CallOption) (*PrepareOneSidedTransactionForSigningResponse, error)
+	BroadcastSignedOneSidedTransaction(ctx context.Context, in *BroadcastSignedOneSidedTransactionRequest, opts ...grpc.CallOption) (*BroadcastSignedOneSidedTransactionResponse, error)
 	// This call supports standard interactive transactions (Mimblewimble),
 	// one-sided transactions, and one-sided-to-stealth-address transactions.
 	// Each recipient must include a valid Tari address, amount, fee, and payment type.
@@ -391,6 +393,46 @@ type WalletClient interface {
 	//
 	// ```
 	GetBlockHeightTransactions(ctx context.Context, in *GetBlockHeightTransactionsRequest, opts ...grpc.CallOption) (*GetBlockHeightTransactionsResponse, error)
+	// Returns all PayRefs (payment references) for a specific transaction.
+	//
+	// The `GetTransactionPayRefs` call retrieves all PayRefs associated with the specified
+	// transaction ID. PayRefs are cryptographic references generated from output hashes
+	// that allow recipients to verify payments without revealing sensitive transaction details.
+	//
+	// ### Request Parameters:
+	//
+	// - `transaction_id` (required):
+	//   - **Type**: `uint64`
+	//   - **Description**: The transaction ID to retrieve PayRefs for.
+	//   - **Restrictions**:
+	//   - Must be a valid transaction ID that exists in the wallet.
+	//   - If the transaction ID is invalid or not found, an error will be returned.
+	//
+	// ### Example JavaScript gRPC client usage:
+	//
+	// ```javascript
+	//
+	//	const request = {
+	//	  transaction_id: 12345
+	//	};
+	//
+	// const response = await client.getTransactionPayRefs(request);
+	// console.log("PayRefs:", response.payment_references.map(ref => Buffer.from(ref).toString('hex')));
+	// ```
+	//
+	// ### Sample JSON Response:
+	//
+	// ```json
+	//
+	//	{
+	//	  "payment_references": [
+	//	    "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+	//	    "0xfedcba0987654321fedcba0987654321fedcba0987654321fedcba0987654321"
+	//	  ]
+	//	}
+	//
+	// ```
+	GetTransactionPayRefs(ctx context.Context, in *GetTransactionPayRefsRequest, opts ...grpc.CallOption) (*GetTransactionPayRefsResponse, error)
 	// Returns the wallet balance details.
 	//
 	// The `GetBalance` call retrieves the current balance status of the wallet,
@@ -941,45 +983,56 @@ type WalletClient interface {
 	ClaimHtlcRefundTransaction(ctx context.Context, in *ClaimHtlcRefundRequest, opts ...grpc.CallOption) (*ClaimHtlcRefundResponse, error)
 	// Creates a transaction with a template registration output
 	CreateTemplateRegistration(ctx context.Context, in *CreateTemplateRegistrationRequest, opts ...grpc.CallOption) (*CreateTemplateRegistrationResponse, error)
-	// The SetBaseNode call configures the base node peer for the wallet.
+	// Signs a message using the wallet's node identity private key.
 	//
-	// This RPC sets the public key and network address of the base node peer that the wallet should communicate with.
+	// The `SignMessage` call creates a Schnorr signature over a message using the wallet's node identity private key.
+	// This signature can be used to prove ownership of the wallet or authenticate messages.
+	// The signature is returned as separate components (signature and public nonce) for verification.
 	//
-	// ### Request Fields:
-	// - `public_key_hex` (string): The public key of the base node, provided as a hex string.
-	// - `net_address` (string): The multiaddress of the base node (e.g., `/ip4/127.0.0.1/tcp/18141`).
+	// ### Request Parameters:
+	//
+	// - `message` (required):
+	//   - **Type**: `bytes`
+	//   - **Description**: The message to be signed (arbitrary bytes).
+	//   - **Restrictions**: Can be any byte sequence.
+	//
+	// ### Response Fields:
+	//
+	// - **signature**: The Schnorr signature as hex-encoded bytes.
+	// - **public_nonce**: The public nonce component of the signature as hex-encoded bytes.
 	//
 	// ### Example JavaScript gRPC client usage:
 	//
 	// ```javascript
 	//
 	//	const request = {
-	//	  public_key_hex: "0281bdfc...",
-	//	  net_address: "/ip4/127.0.0.1/tcp/18141"
+	//	  message: Buffer.from("Hello Tari!", "utf-8")
 	//	};
 	//
-	//	client.setBaseNode(request, (err, response) => {
+	//	client.signMessage(request, (err, response) => {
 	//	  if (err) console.error(err);
-	//	  else console.log("Base node set successfully");
+	//	  else console.log("Signature:", response.signature, "Nonce:", response.public_nonce);
 	//	});
 	//
 	// ```
 	//
-	// ### Sample JSON Request:
+	// ### Sample JSON Response:
+	//
 	// ```json
 	//
 	//	{
-	//	  "public_key_hex": "0281bdfc...",
-	//	  "net_address": "/ip4/127.0.0.1/tcp/18141"
+	//	  "signature": "a1b2c3d4e5f6...",
+	//	  "public_nonce": "f6e5d4c3b2a1..."
 	//	}
 	//
 	// ```
 	//
-	// ### Sample JSON Response:
-	// ```json
-	// {}
-	// ```
-	SetBaseNode(ctx context.Context, in *SetBaseNodeRequest, opts ...grpc.CallOption) (*SetBaseNodeResponse, error)
+	// ### Security Notes:
+	//
+	// - This signs with the wallet's node identity private key.
+	// - The signature can be verified using the wallet's public key.
+	// - Use this for authentication and ownership proofs only.
+	SignMessage(ctx context.Context, in *SignMessageRequest, opts ...grpc.CallOption) (*SignMessageResponse, error)
 	// ### Example JavaScript gRPC client usage:
 	// ```javascript
 	// const call = client.streamTransactionEvents({});
@@ -1016,8 +1069,65 @@ type WalletClient interface {
 	//
 	// ```
 	StreamTransactionEvents(ctx context.Context, in *TransactionEventRequest, opts ...grpc.CallOption) (Wallet_StreamTransactionEventsClient, error)
-	RegisterValidatorNode(ctx context.Context, in *RegisterValidatorNodeRequest, opts ...grpc.CallOption) (*RegisterValidatorNodeResponse, error)
 	ImportTransactions(ctx context.Context, in *ImportTransactionsRequest, opts ...grpc.CallOption) (*ImportTransactionsResponse, error)
+	// Get all completed transactions including cancelled ones, sorted by timestamp and paginated
+	GetAllCompletedTransactions(ctx context.Context, in *GetAllCompletedTransactionsRequest, opts ...grpc.CallOption) (*GetAllCompletedTransactionsResponse, error)
+	// Gets transaction information by payment reference (PayRef)
+	//
+	// The `GetPaymentByReference` call retrieves transaction information using a 32-byte payment reference hash.
+	// PayRefs are generated as Blake2b_256(block_hash || output_hash) and provide a stable way to look up
+	// transactions even after outputs are spent.
+	//
+	// ### Request Parameters:
+	//
+	// - `payment_reference` (required):
+	//   - **Type**: `bytes` (32 bytes)
+	//   - **Description**: The payment reference hash to look up
+	//   - **Restrictions**: Must be exactly 32 bytes representing a valid PayRef
+	//
+	// ### Example JavaScript gRPC client usage:
+	//
+	// ```javascript
+	// const payref = Buffer.from('a1b2c3d4e5f6789012345678901234567890123456789012345678901234567890', 'hex');
+	// const request = { payment_reference: payref };
+	//
+	//	client.getPaymentByReference(request, (err, response) => {
+	//	  if (err) console.error(err);
+	//	  else console.log('Transaction found:', response.transaction);
+	//	});
+	//
+	// ```
+	//
+	// ### Sample JSON Response:
+	//
+	// ```json
+	//
+	//	{
+	//	  "transaction": {
+	//	    "tx_id": 12345,
+	//	    "source_address": "0x1234abcd...",
+	//	    "dest_address": "0x5678efgh...",
+	//	    "status": "TRANSACTION_STATUS_MINED_CONFIRMED",
+	//	    "direction": "TRANSACTION_DIRECTION_INBOUND",
+	//	    "amount": 1000000,
+	//	    "fee": 20,
+	//	    "is_cancelled": false,
+	//	    "excess_sig": "0xabcdef...",
+	//	    "timestamp": 1681234567,
+	//	    "payment_id": "0xdeadbeef...",
+	//	    "mined_in_block_height": 150000
+	//	  }
+	//	}
+	//
+	// ```
+	GetPaymentByReference(ctx context.Context, in *GetPaymentByReferenceRequest, opts ...grpc.CallOption) (*GetPaymentByReferenceResponse, error)
+	GetFeeEstimate(ctx context.Context, in *GetFeeEstimateRequest, opts ...grpc.CallOption) (*GetFeeEstimateResponse, error)
+	GetFeePerGramStats(ctx context.Context, in *GetFeePerGramStatsRequest, opts ...grpc.CallOption) (*GetFeePerGramStatsResponse, error)
+	ReplaceByFee(ctx context.Context, in *ReplaceByFeeRequest, opts ...grpc.CallOption) (*ReplaceByFeeResponse, error)
+	UserPayForFee(ctx context.Context, in *UserPayForFeeRequest, opts ...grpc.CallOption) (*UserPayForFeeResponse, error)
+	RegisterValidatorNode(ctx context.Context, in *RegisterValidatorNodeRequest, opts ...grpc.CallOption) (*RegisterValidatorNodeResponse, error)
+	SubmitValidatorEvictionProof(ctx context.Context, in *SubmitValidatorEvictionProofRequest, opts ...grpc.CallOption) (*SubmitValidatorEvictionProofResponse, error)
+	SubmitValidatorNodeExit(ctx context.Context, in *SubmitValidatorNodeExitRequest, opts ...grpc.CallOption) (*SubmitValidatorNodeExitResponse, error)
 }
 
 type walletClient struct {
@@ -1100,6 +1210,24 @@ func (c *walletClient) GetCompleteAddress(ctx context.Context, in *Empty, opts .
 	return out, nil
 }
 
+func (c *walletClient) PrepareOneSidedTransactionForSigning(ctx context.Context, in *PrepareOneSidedTransactionForSigningRequest, opts ...grpc.CallOption) (*PrepareOneSidedTransactionForSigningResponse, error) {
+	out := new(PrepareOneSidedTransactionForSigningResponse)
+	err := c.cc.Invoke(ctx, "/tari.rpc.Wallet/PrepareOneSidedTransactionForSigning", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *walletClient) BroadcastSignedOneSidedTransaction(ctx context.Context, in *BroadcastSignedOneSidedTransactionRequest, opts ...grpc.CallOption) (*BroadcastSignedOneSidedTransactionResponse, error) {
+	out := new(BroadcastSignedOneSidedTransactionResponse)
+	err := c.cc.Invoke(ctx, "/tari.rpc.Wallet/BroadcastSignedOneSidedTransaction", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *walletClient) Transfer(ctx context.Context, in *TransferRequest, opts ...grpc.CallOption) (*TransferResponse, error) {
 	out := new(TransferResponse)
 	err := c.cc.Invoke(ctx, "/tari.rpc.Wallet/Transfer", in, out, opts...)
@@ -1153,6 +1281,15 @@ func (x *walletGetCompletedTransactionsClient) Recv() (*GetCompletedTransactions
 func (c *walletClient) GetBlockHeightTransactions(ctx context.Context, in *GetBlockHeightTransactionsRequest, opts ...grpc.CallOption) (*GetBlockHeightTransactionsResponse, error) {
 	out := new(GetBlockHeightTransactionsResponse)
 	err := c.cc.Invoke(ctx, "/tari.rpc.Wallet/GetBlockHeightTransactions", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *walletClient) GetTransactionPayRefs(ctx context.Context, in *GetTransactionPayRefsRequest, opts ...grpc.CallOption) (*GetTransactionPayRefsResponse, error) {
+	out := new(GetTransactionPayRefsResponse)
+	err := c.cc.Invoke(ctx, "/tari.rpc.Wallet/GetTransactionPayRefs", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1285,9 +1422,9 @@ func (c *walletClient) CreateTemplateRegistration(ctx context.Context, in *Creat
 	return out, nil
 }
 
-func (c *walletClient) SetBaseNode(ctx context.Context, in *SetBaseNodeRequest, opts ...grpc.CallOption) (*SetBaseNodeResponse, error) {
-	out := new(SetBaseNodeResponse)
-	err := c.cc.Invoke(ctx, "/tari.rpc.Wallet/SetBaseNode", in, out, opts...)
+func (c *walletClient) SignMessage(ctx context.Context, in *SignMessageRequest, opts ...grpc.CallOption) (*SignMessageResponse, error) {
+	out := new(SignMessageResponse)
+	err := c.cc.Invoke(ctx, "/tari.rpc.Wallet/SignMessage", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1326,6 +1463,69 @@ func (x *walletStreamTransactionEventsClient) Recv() (*TransactionEventResponse,
 	return m, nil
 }
 
+func (c *walletClient) ImportTransactions(ctx context.Context, in *ImportTransactionsRequest, opts ...grpc.CallOption) (*ImportTransactionsResponse, error) {
+	out := new(ImportTransactionsResponse)
+	err := c.cc.Invoke(ctx, "/tari.rpc.Wallet/ImportTransactions", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *walletClient) GetAllCompletedTransactions(ctx context.Context, in *GetAllCompletedTransactionsRequest, opts ...grpc.CallOption) (*GetAllCompletedTransactionsResponse, error) {
+	out := new(GetAllCompletedTransactionsResponse)
+	err := c.cc.Invoke(ctx, "/tari.rpc.Wallet/GetAllCompletedTransactions", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *walletClient) GetPaymentByReference(ctx context.Context, in *GetPaymentByReferenceRequest, opts ...grpc.CallOption) (*GetPaymentByReferenceResponse, error) {
+	out := new(GetPaymentByReferenceResponse)
+	err := c.cc.Invoke(ctx, "/tari.rpc.Wallet/GetPaymentByReference", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *walletClient) GetFeeEstimate(ctx context.Context, in *GetFeeEstimateRequest, opts ...grpc.CallOption) (*GetFeeEstimateResponse, error) {
+	out := new(GetFeeEstimateResponse)
+	err := c.cc.Invoke(ctx, "/tari.rpc.Wallet/GetFeeEstimate", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *walletClient) GetFeePerGramStats(ctx context.Context, in *GetFeePerGramStatsRequest, opts ...grpc.CallOption) (*GetFeePerGramStatsResponse, error) {
+	out := new(GetFeePerGramStatsResponse)
+	err := c.cc.Invoke(ctx, "/tari.rpc.Wallet/GetFeePerGramStats", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *walletClient) ReplaceByFee(ctx context.Context, in *ReplaceByFeeRequest, opts ...grpc.CallOption) (*ReplaceByFeeResponse, error) {
+	out := new(ReplaceByFeeResponse)
+	err := c.cc.Invoke(ctx, "/tari.rpc.Wallet/ReplaceByFee", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *walletClient) UserPayForFee(ctx context.Context, in *UserPayForFeeRequest, opts ...grpc.CallOption) (*UserPayForFeeResponse, error) {
+	out := new(UserPayForFeeResponse)
+	err := c.cc.Invoke(ctx, "/tari.rpc.Wallet/UserPayForFee", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *walletClient) RegisterValidatorNode(ctx context.Context, in *RegisterValidatorNodeRequest, opts ...grpc.CallOption) (*RegisterValidatorNodeResponse, error) {
 	out := new(RegisterValidatorNodeResponse)
 	err := c.cc.Invoke(ctx, "/tari.rpc.Wallet/RegisterValidatorNode", in, out, opts...)
@@ -1335,9 +1535,18 @@ func (c *walletClient) RegisterValidatorNode(ctx context.Context, in *RegisterVa
 	return out, nil
 }
 
-func (c *walletClient) ImportTransactions(ctx context.Context, in *ImportTransactionsRequest, opts ...grpc.CallOption) (*ImportTransactionsResponse, error) {
-	out := new(ImportTransactionsResponse)
-	err := c.cc.Invoke(ctx, "/tari.rpc.Wallet/ImportTransactions", in, out, opts...)
+func (c *walletClient) SubmitValidatorEvictionProof(ctx context.Context, in *SubmitValidatorEvictionProofRequest, opts ...grpc.CallOption) (*SubmitValidatorEvictionProofResponse, error) {
+	out := new(SubmitValidatorEvictionProofResponse)
+	err := c.cc.Invoke(ctx, "/tari.rpc.Wallet/SubmitValidatorEvictionProof", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *walletClient) SubmitValidatorNodeExit(ctx context.Context, in *SubmitValidatorNodeExitRequest, opts ...grpc.CallOption) (*SubmitValidatorNodeExitResponse, error) {
+	out := new(SubmitValidatorNodeExitResponse)
+	err := c.cc.Invoke(ctx, "/tari.rpc.Wallet/SubmitValidatorNodeExit", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1536,6 +1745,8 @@ type WalletServer interface {
 	//
 	// ```
 	GetCompleteAddress(context.Context, *Empty) (*GetCompleteAddressResponse, error)
+	PrepareOneSidedTransactionForSigning(context.Context, *PrepareOneSidedTransactionForSigningRequest) (*PrepareOneSidedTransactionForSigningResponse, error)
+	BroadcastSignedOneSidedTransaction(context.Context, *BroadcastSignedOneSidedTransactionRequest) (*BroadcastSignedOneSidedTransactionResponse, error)
 	// This call supports standard interactive transactions (Mimblewimble),
 	// one-sided transactions, and one-sided-to-stealth-address transactions.
 	// Each recipient must include a valid Tari address, amount, fee, and payment type.
@@ -1722,6 +1933,46 @@ type WalletServer interface {
 	//
 	// ```
 	GetBlockHeightTransactions(context.Context, *GetBlockHeightTransactionsRequest) (*GetBlockHeightTransactionsResponse, error)
+	// Returns all PayRefs (payment references) for a specific transaction.
+	//
+	// The `GetTransactionPayRefs` call retrieves all PayRefs associated with the specified
+	// transaction ID. PayRefs are cryptographic references generated from output hashes
+	// that allow recipients to verify payments without revealing sensitive transaction details.
+	//
+	// ### Request Parameters:
+	//
+	// - `transaction_id` (required):
+	//   - **Type**: `uint64`
+	//   - **Description**: The transaction ID to retrieve PayRefs for.
+	//   - **Restrictions**:
+	//   - Must be a valid transaction ID that exists in the wallet.
+	//   - If the transaction ID is invalid or not found, an error will be returned.
+	//
+	// ### Example JavaScript gRPC client usage:
+	//
+	// ```javascript
+	//
+	//	const request = {
+	//	  transaction_id: 12345
+	//	};
+	//
+	// const response = await client.getTransactionPayRefs(request);
+	// console.log("PayRefs:", response.payment_references.map(ref => Buffer.from(ref).toString('hex')));
+	// ```
+	//
+	// ### Sample JSON Response:
+	//
+	// ```json
+	//
+	//	{
+	//	  "payment_references": [
+	//	    "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+	//	    "0xfedcba0987654321fedcba0987654321fedcba0987654321fedcba0987654321"
+	//	  ]
+	//	}
+	//
+	// ```
+	GetTransactionPayRefs(context.Context, *GetTransactionPayRefsRequest) (*GetTransactionPayRefsResponse, error)
 	// Returns the wallet balance details.
 	//
 	// The `GetBalance` call retrieves the current balance status of the wallet,
@@ -2272,45 +2523,56 @@ type WalletServer interface {
 	ClaimHtlcRefundTransaction(context.Context, *ClaimHtlcRefundRequest) (*ClaimHtlcRefundResponse, error)
 	// Creates a transaction with a template registration output
 	CreateTemplateRegistration(context.Context, *CreateTemplateRegistrationRequest) (*CreateTemplateRegistrationResponse, error)
-	// The SetBaseNode call configures the base node peer for the wallet.
+	// Signs a message using the wallet's node identity private key.
 	//
-	// This RPC sets the public key and network address of the base node peer that the wallet should communicate with.
+	// The `SignMessage` call creates a Schnorr signature over a message using the wallet's node identity private key.
+	// This signature can be used to prove ownership of the wallet or authenticate messages.
+	// The signature is returned as separate components (signature and public nonce) for verification.
 	//
-	// ### Request Fields:
-	// - `public_key_hex` (string): The public key of the base node, provided as a hex string.
-	// - `net_address` (string): The multiaddress of the base node (e.g., `/ip4/127.0.0.1/tcp/18141`).
+	// ### Request Parameters:
+	//
+	// - `message` (required):
+	//   - **Type**: `bytes`
+	//   - **Description**: The message to be signed (arbitrary bytes).
+	//   - **Restrictions**: Can be any byte sequence.
+	//
+	// ### Response Fields:
+	//
+	// - **signature**: The Schnorr signature as hex-encoded bytes.
+	// - **public_nonce**: The public nonce component of the signature as hex-encoded bytes.
 	//
 	// ### Example JavaScript gRPC client usage:
 	//
 	// ```javascript
 	//
 	//	const request = {
-	//	  public_key_hex: "0281bdfc...",
-	//	  net_address: "/ip4/127.0.0.1/tcp/18141"
+	//	  message: Buffer.from("Hello Tari!", "utf-8")
 	//	};
 	//
-	//	client.setBaseNode(request, (err, response) => {
+	//	client.signMessage(request, (err, response) => {
 	//	  if (err) console.error(err);
-	//	  else console.log("Base node set successfully");
+	//	  else console.log("Signature:", response.signature, "Nonce:", response.public_nonce);
 	//	});
 	//
 	// ```
 	//
-	// ### Sample JSON Request:
+	// ### Sample JSON Response:
+	//
 	// ```json
 	//
 	//	{
-	//	  "public_key_hex": "0281bdfc...",
-	//	  "net_address": "/ip4/127.0.0.1/tcp/18141"
+	//	  "signature": "a1b2c3d4e5f6...",
+	//	  "public_nonce": "f6e5d4c3b2a1..."
 	//	}
 	//
 	// ```
 	//
-	// ### Sample JSON Response:
-	// ```json
-	// {}
-	// ```
-	SetBaseNode(context.Context, *SetBaseNodeRequest) (*SetBaseNodeResponse, error)
+	// ### Security Notes:
+	//
+	// - This signs with the wallet's node identity private key.
+	// - The signature can be verified using the wallet's public key.
+	// - Use this for authentication and ownership proofs only.
+	SignMessage(context.Context, *SignMessageRequest) (*SignMessageResponse, error)
 	// ### Example JavaScript gRPC client usage:
 	// ```javascript
 	// const call = client.streamTransactionEvents({});
@@ -2347,8 +2609,65 @@ type WalletServer interface {
 	//
 	// ```
 	StreamTransactionEvents(*TransactionEventRequest, Wallet_StreamTransactionEventsServer) error
-	RegisterValidatorNode(context.Context, *RegisterValidatorNodeRequest) (*RegisterValidatorNodeResponse, error)
 	ImportTransactions(context.Context, *ImportTransactionsRequest) (*ImportTransactionsResponse, error)
+	// Get all completed transactions including cancelled ones, sorted by timestamp and paginated
+	GetAllCompletedTransactions(context.Context, *GetAllCompletedTransactionsRequest) (*GetAllCompletedTransactionsResponse, error)
+	// Gets transaction information by payment reference (PayRef)
+	//
+	// The `GetPaymentByReference` call retrieves transaction information using a 32-byte payment reference hash.
+	// PayRefs are generated as Blake2b_256(block_hash || output_hash) and provide a stable way to look up
+	// transactions even after outputs are spent.
+	//
+	// ### Request Parameters:
+	//
+	// - `payment_reference` (required):
+	//   - **Type**: `bytes` (32 bytes)
+	//   - **Description**: The payment reference hash to look up
+	//   - **Restrictions**: Must be exactly 32 bytes representing a valid PayRef
+	//
+	// ### Example JavaScript gRPC client usage:
+	//
+	// ```javascript
+	// const payref = Buffer.from('a1b2c3d4e5f6789012345678901234567890123456789012345678901234567890', 'hex');
+	// const request = { payment_reference: payref };
+	//
+	//	client.getPaymentByReference(request, (err, response) => {
+	//	  if (err) console.error(err);
+	//	  else console.log('Transaction found:', response.transaction);
+	//	});
+	//
+	// ```
+	//
+	// ### Sample JSON Response:
+	//
+	// ```json
+	//
+	//	{
+	//	  "transaction": {
+	//	    "tx_id": 12345,
+	//	    "source_address": "0x1234abcd...",
+	//	    "dest_address": "0x5678efgh...",
+	//	    "status": "TRANSACTION_STATUS_MINED_CONFIRMED",
+	//	    "direction": "TRANSACTION_DIRECTION_INBOUND",
+	//	    "amount": 1000000,
+	//	    "fee": 20,
+	//	    "is_cancelled": false,
+	//	    "excess_sig": "0xabcdef...",
+	//	    "timestamp": 1681234567,
+	//	    "payment_id": "0xdeadbeef...",
+	//	    "mined_in_block_height": 150000
+	//	  }
+	//	}
+	//
+	// ```
+	GetPaymentByReference(context.Context, *GetPaymentByReferenceRequest) (*GetPaymentByReferenceResponse, error)
+	GetFeeEstimate(context.Context, *GetFeeEstimateRequest) (*GetFeeEstimateResponse, error)
+	GetFeePerGramStats(context.Context, *GetFeePerGramStatsRequest) (*GetFeePerGramStatsResponse, error)
+	ReplaceByFee(context.Context, *ReplaceByFeeRequest) (*ReplaceByFeeResponse, error)
+	UserPayForFee(context.Context, *UserPayForFeeRequest) (*UserPayForFeeResponse, error)
+	RegisterValidatorNode(context.Context, *RegisterValidatorNodeRequest) (*RegisterValidatorNodeResponse, error)
+	SubmitValidatorEvictionProof(context.Context, *SubmitValidatorEvictionProofRequest) (*SubmitValidatorEvictionProofResponse, error)
+	SubmitValidatorNodeExit(context.Context, *SubmitValidatorNodeExitRequest) (*SubmitValidatorNodeExitResponse, error)
 	mustEmbedUnimplementedWalletServer()
 }
 
@@ -2380,6 +2699,12 @@ func (UnimplementedWalletServer) GetPaymentIdAddress(context.Context, *GetPaymen
 func (UnimplementedWalletServer) GetCompleteAddress(context.Context, *Empty) (*GetCompleteAddressResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetCompleteAddress not implemented")
 }
+func (UnimplementedWalletServer) PrepareOneSidedTransactionForSigning(context.Context, *PrepareOneSidedTransactionForSigningRequest) (*PrepareOneSidedTransactionForSigningResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PrepareOneSidedTransactionForSigning not implemented")
+}
+func (UnimplementedWalletServer) BroadcastSignedOneSidedTransaction(context.Context, *BroadcastSignedOneSidedTransactionRequest) (*BroadcastSignedOneSidedTransactionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method BroadcastSignedOneSidedTransaction not implemented")
+}
 func (UnimplementedWalletServer) Transfer(context.Context, *TransferRequest) (*TransferResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Transfer not implemented")
 }
@@ -2391,6 +2716,9 @@ func (UnimplementedWalletServer) GetCompletedTransactions(*GetCompletedTransacti
 }
 func (UnimplementedWalletServer) GetBlockHeightTransactions(context.Context, *GetBlockHeightTransactionsRequest) (*GetBlockHeightTransactionsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetBlockHeightTransactions not implemented")
+}
+func (UnimplementedWalletServer) GetTransactionPayRefs(context.Context, *GetTransactionPayRefsRequest) (*GetTransactionPayRefsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetTransactionPayRefs not implemented")
 }
 func (UnimplementedWalletServer) GetBalance(context.Context, *GetBalanceRequest) (*GetBalanceResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetBalance not implemented")
@@ -2434,17 +2762,41 @@ func (UnimplementedWalletServer) ClaimHtlcRefundTransaction(context.Context, *Cl
 func (UnimplementedWalletServer) CreateTemplateRegistration(context.Context, *CreateTemplateRegistrationRequest) (*CreateTemplateRegistrationResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateTemplateRegistration not implemented")
 }
-func (UnimplementedWalletServer) SetBaseNode(context.Context, *SetBaseNodeRequest) (*SetBaseNodeResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SetBaseNode not implemented")
+func (UnimplementedWalletServer) SignMessage(context.Context, *SignMessageRequest) (*SignMessageResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SignMessage not implemented")
 }
 func (UnimplementedWalletServer) StreamTransactionEvents(*TransactionEventRequest, Wallet_StreamTransactionEventsServer) error {
 	return status.Errorf(codes.Unimplemented, "method StreamTransactionEvents not implemented")
 }
+func (UnimplementedWalletServer) ImportTransactions(context.Context, *ImportTransactionsRequest) (*ImportTransactionsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ImportTransactions not implemented")
+}
+func (UnimplementedWalletServer) GetAllCompletedTransactions(context.Context, *GetAllCompletedTransactionsRequest) (*GetAllCompletedTransactionsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetAllCompletedTransactions not implemented")
+}
+func (UnimplementedWalletServer) GetPaymentByReference(context.Context, *GetPaymentByReferenceRequest) (*GetPaymentByReferenceResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetPaymentByReference not implemented")
+}
+func (UnimplementedWalletServer) GetFeeEstimate(context.Context, *GetFeeEstimateRequest) (*GetFeeEstimateResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetFeeEstimate not implemented")
+}
+func (UnimplementedWalletServer) GetFeePerGramStats(context.Context, *GetFeePerGramStatsRequest) (*GetFeePerGramStatsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetFeePerGramStats not implemented")
+}
+func (UnimplementedWalletServer) ReplaceByFee(context.Context, *ReplaceByFeeRequest) (*ReplaceByFeeResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReplaceByFee not implemented")
+}
+func (UnimplementedWalletServer) UserPayForFee(context.Context, *UserPayForFeeRequest) (*UserPayForFeeResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UserPayForFee not implemented")
+}
 func (UnimplementedWalletServer) RegisterValidatorNode(context.Context, *RegisterValidatorNodeRequest) (*RegisterValidatorNodeResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RegisterValidatorNode not implemented")
 }
-func (UnimplementedWalletServer) ImportTransactions(context.Context, *ImportTransactionsRequest) (*ImportTransactionsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ImportTransactions not implemented")
+func (UnimplementedWalletServer) SubmitValidatorEvictionProof(context.Context, *SubmitValidatorEvictionProofRequest) (*SubmitValidatorEvictionProofResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SubmitValidatorEvictionProof not implemented")
+}
+func (UnimplementedWalletServer) SubmitValidatorNodeExit(context.Context, *SubmitValidatorNodeExitRequest) (*SubmitValidatorNodeExitResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SubmitValidatorNodeExit not implemented")
 }
 func (UnimplementedWalletServer) mustEmbedUnimplementedWalletServer() {}
 
@@ -2603,6 +2955,42 @@ func _Wallet_GetCompleteAddress_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Wallet_PrepareOneSidedTransactionForSigning_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PrepareOneSidedTransactionForSigningRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServer).PrepareOneSidedTransactionForSigning(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/tari.rpc.Wallet/PrepareOneSidedTransactionForSigning",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServer).PrepareOneSidedTransactionForSigning(ctx, req.(*PrepareOneSidedTransactionForSigningRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Wallet_BroadcastSignedOneSidedTransaction_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BroadcastSignedOneSidedTransactionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServer).BroadcastSignedOneSidedTransaction(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/tari.rpc.Wallet/BroadcastSignedOneSidedTransaction",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServer).BroadcastSignedOneSidedTransaction(ctx, req.(*BroadcastSignedOneSidedTransactionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Wallet_Transfer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(TransferRequest)
 	if err := dec(in); err != nil {
@@ -2674,6 +3062,24 @@ func _Wallet_GetBlockHeightTransactions_Handler(srv interface{}, ctx context.Con
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(WalletServer).GetBlockHeightTransactions(ctx, req.(*GetBlockHeightTransactionsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Wallet_GetTransactionPayRefs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTransactionPayRefsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServer).GetTransactionPayRefs(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/tari.rpc.Wallet/GetTransactionPayRefs",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServer).GetTransactionPayRefs(ctx, req.(*GetTransactionPayRefsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -2930,20 +3336,20 @@ func _Wallet_CreateTemplateRegistration_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Wallet_SetBaseNode_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SetBaseNodeRequest)
+func _Wallet_SignMessage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SignMessageRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(WalletServer).SetBaseNode(ctx, in)
+		return srv.(WalletServer).SignMessage(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/tari.rpc.Wallet/SetBaseNode",
+		FullMethod: "/tari.rpc.Wallet/SignMessage",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(WalletServer).SetBaseNode(ctx, req.(*SetBaseNodeRequest))
+		return srv.(WalletServer).SignMessage(ctx, req.(*SignMessageRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -2969,6 +3375,132 @@ func (x *walletStreamTransactionEventsServer) Send(m *TransactionEventResponse) 
 	return x.ServerStream.SendMsg(m)
 }
 
+func _Wallet_ImportTransactions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ImportTransactionsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServer).ImportTransactions(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/tari.rpc.Wallet/ImportTransactions",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServer).ImportTransactions(ctx, req.(*ImportTransactionsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Wallet_GetAllCompletedTransactions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetAllCompletedTransactionsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServer).GetAllCompletedTransactions(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/tari.rpc.Wallet/GetAllCompletedTransactions",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServer).GetAllCompletedTransactions(ctx, req.(*GetAllCompletedTransactionsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Wallet_GetPaymentByReference_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetPaymentByReferenceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServer).GetPaymentByReference(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/tari.rpc.Wallet/GetPaymentByReference",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServer).GetPaymentByReference(ctx, req.(*GetPaymentByReferenceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Wallet_GetFeeEstimate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetFeeEstimateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServer).GetFeeEstimate(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/tari.rpc.Wallet/GetFeeEstimate",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServer).GetFeeEstimate(ctx, req.(*GetFeeEstimateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Wallet_GetFeePerGramStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetFeePerGramStatsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServer).GetFeePerGramStats(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/tari.rpc.Wallet/GetFeePerGramStats",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServer).GetFeePerGramStats(ctx, req.(*GetFeePerGramStatsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Wallet_ReplaceByFee_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReplaceByFeeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServer).ReplaceByFee(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/tari.rpc.Wallet/ReplaceByFee",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServer).ReplaceByFee(ctx, req.(*ReplaceByFeeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Wallet_UserPayForFee_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserPayForFeeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServer).UserPayForFee(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/tari.rpc.Wallet/UserPayForFee",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServer).UserPayForFee(ctx, req.(*UserPayForFeeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Wallet_RegisterValidatorNode_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RegisterValidatorNodeRequest)
 	if err := dec(in); err != nil {
@@ -2987,20 +3519,38 @@ func _Wallet_RegisterValidatorNode_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Wallet_ImportTransactions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ImportTransactionsRequest)
+func _Wallet_SubmitValidatorEvictionProof_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SubmitValidatorEvictionProofRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(WalletServer).ImportTransactions(ctx, in)
+		return srv.(WalletServer).SubmitValidatorEvictionProof(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/tari.rpc.Wallet/ImportTransactions",
+		FullMethod: "/tari.rpc.Wallet/SubmitValidatorEvictionProof",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(WalletServer).ImportTransactions(ctx, req.(*ImportTransactionsRequest))
+		return srv.(WalletServer).SubmitValidatorEvictionProof(ctx, req.(*SubmitValidatorEvictionProofRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Wallet_SubmitValidatorNodeExit_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SubmitValidatorNodeExitRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WalletServer).SubmitValidatorNodeExit(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/tari.rpc.Wallet/SubmitValidatorNodeExit",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WalletServer).SubmitValidatorNodeExit(ctx, req.(*SubmitValidatorNodeExitRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -3042,6 +3592,14 @@ var _Wallet_serviceDesc = grpc.ServiceDesc{
 			Handler:    _Wallet_GetCompleteAddress_Handler,
 		},
 		{
+			MethodName: "PrepareOneSidedTransactionForSigning",
+			Handler:    _Wallet_PrepareOneSidedTransactionForSigning_Handler,
+		},
+		{
+			MethodName: "BroadcastSignedOneSidedTransaction",
+			Handler:    _Wallet_BroadcastSignedOneSidedTransaction_Handler,
+		},
+		{
 			MethodName: "Transfer",
 			Handler:    _Wallet_Transfer_Handler,
 		},
@@ -3052,6 +3610,10 @@ var _Wallet_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetBlockHeightTransactions",
 			Handler:    _Wallet_GetBlockHeightTransactions_Handler,
+		},
+		{
+			MethodName: "GetTransactionPayRefs",
+			Handler:    _Wallet_GetTransactionPayRefs_Handler,
 		},
 		{
 			MethodName: "GetBalance",
@@ -3110,16 +3672,48 @@ var _Wallet_serviceDesc = grpc.ServiceDesc{
 			Handler:    _Wallet_CreateTemplateRegistration_Handler,
 		},
 		{
-			MethodName: "SetBaseNode",
-			Handler:    _Wallet_SetBaseNode_Handler,
+			MethodName: "SignMessage",
+			Handler:    _Wallet_SignMessage_Handler,
+		},
+		{
+			MethodName: "ImportTransactions",
+			Handler:    _Wallet_ImportTransactions_Handler,
+		},
+		{
+			MethodName: "GetAllCompletedTransactions",
+			Handler:    _Wallet_GetAllCompletedTransactions_Handler,
+		},
+		{
+			MethodName: "GetPaymentByReference",
+			Handler:    _Wallet_GetPaymentByReference_Handler,
+		},
+		{
+			MethodName: "GetFeeEstimate",
+			Handler:    _Wallet_GetFeeEstimate_Handler,
+		},
+		{
+			MethodName: "GetFeePerGramStats",
+			Handler:    _Wallet_GetFeePerGramStats_Handler,
+		},
+		{
+			MethodName: "ReplaceByFee",
+			Handler:    _Wallet_ReplaceByFee_Handler,
+		},
+		{
+			MethodName: "UserPayForFee",
+			Handler:    _Wallet_UserPayForFee_Handler,
 		},
 		{
 			MethodName: "RegisterValidatorNode",
 			Handler:    _Wallet_RegisterValidatorNode_Handler,
 		},
 		{
-			MethodName: "ImportTransactions",
-			Handler:    _Wallet_ImportTransactions_Handler,
+			MethodName: "SubmitValidatorEvictionProof",
+			Handler:    _Wallet_SubmitValidatorEvictionProof_Handler,
+		},
+		{
+			MethodName: "SubmitValidatorNodeExit",
+			Handler:    _Wallet_SubmitValidatorNodeExit_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

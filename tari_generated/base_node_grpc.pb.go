@@ -32,7 +32,7 @@ type BaseNodeClient interface {
 	// Returns Block Fees
 	GetBlockFees(ctx context.Context, in *BlockGroupRequest, opts ...grpc.CallOption) (*BlockGroupResponse, error)
 	// Get Version
-	GetVersion(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*StringValue, error)
+	GetVersion(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*BaseNodeGetVersionResponse, error)
 	// Check for new updates
 	CheckForUpdates(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*SoftwareUpdate, error)
 	// Get coins in circulation
@@ -81,11 +81,16 @@ type BaseNodeClient interface {
 	GetMempoolStats(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*MempoolStatsResponse, error)
 	// Get VNs
 	GetActiveValidatorNodes(ctx context.Context, in *GetActiveValidatorNodesRequest, opts ...grpc.CallOption) (BaseNode_GetActiveValidatorNodesClient, error)
+	GetValidatorNodeChanges(ctx context.Context, in *GetValidatorNodeChangesRequest, opts ...grpc.CallOption) (*GetValidatorNodeChangesResponse, error)
 	GetShardKey(ctx context.Context, in *GetShardKeyRequest, opts ...grpc.CallOption) (*GetShardKeyResponse, error)
 	// Get templates
 	GetTemplateRegistrations(ctx context.Context, in *GetTemplateRegistrationsRequest, opts ...grpc.CallOption) (BaseNode_GetTemplateRegistrationsClient, error)
 	GetSideChainUtxos(ctx context.Context, in *GetSideChainUtxosRequest, opts ...grpc.CallOption) (BaseNode_GetSideChainUtxosClient, error)
 	GetNetworkState(ctx context.Context, in *GetNetworkStateRequest, opts ...grpc.CallOption) (*GetNetworkStateResponse, error)
+	// PayRef (Payment Reference) lookup for block explorers and external services
+	SearchPaymentReferences(ctx context.Context, in *SearchPaymentReferencesRequest, opts ...grpc.CallOption) (BaseNode_SearchPaymentReferencesClient, error)
+	// PayRef (Payment Reference) lookup for block explorers and external services via output hash
+	SearchPaymentReferencesViaOutputHash(ctx context.Context, in *FetchMatchingUtxosRequest, opts ...grpc.CallOption) (BaseNode_SearchPaymentReferencesViaOutputHashClient, error)
 }
 
 type baseNodeClient struct {
@@ -205,8 +210,8 @@ func (c *baseNodeClient) GetBlockFees(ctx context.Context, in *BlockGroupRequest
 	return out, nil
 }
 
-func (c *baseNodeClient) GetVersion(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*StringValue, error) {
-	out := new(StringValue)
+func (c *baseNodeClient) GetVersion(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*BaseNodeGetVersionResponse, error) {
+	out := new(BaseNodeGetVersionResponse)
 	err := c.cc.Invoke(ctx, "/tari.rpc.BaseNode/GetVersion", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -623,6 +628,15 @@ func (x *baseNodeGetActiveValidatorNodesClient) Recv() (*GetActiveValidatorNodes
 	return m, nil
 }
 
+func (c *baseNodeClient) GetValidatorNodeChanges(ctx context.Context, in *GetValidatorNodeChangesRequest, opts ...grpc.CallOption) (*GetValidatorNodeChangesResponse, error) {
+	out := new(GetValidatorNodeChangesResponse)
+	err := c.cc.Invoke(ctx, "/tari.rpc.BaseNode/GetValidatorNodeChanges", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *baseNodeClient) GetShardKey(ctx context.Context, in *GetShardKeyRequest, opts ...grpc.CallOption) (*GetShardKeyResponse, error) {
 	out := new(GetShardKeyResponse)
 	err := c.cc.Invoke(ctx, "/tari.rpc.BaseNode/GetShardKey", in, out, opts...)
@@ -705,6 +719,70 @@ func (c *baseNodeClient) GetNetworkState(ctx context.Context, in *GetNetworkStat
 	return out, nil
 }
 
+func (c *baseNodeClient) SearchPaymentReferences(ctx context.Context, in *SearchPaymentReferencesRequest, opts ...grpc.CallOption) (BaseNode_SearchPaymentReferencesClient, error) {
+	stream, err := c.cc.NewStream(ctx, &_BaseNode_serviceDesc.Streams[12], "/tari.rpc.BaseNode/SearchPaymentReferences", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &baseNodeSearchPaymentReferencesClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type BaseNode_SearchPaymentReferencesClient interface {
+	Recv() (*PaymentReferenceResponse, error)
+	grpc.ClientStream
+}
+
+type baseNodeSearchPaymentReferencesClient struct {
+	grpc.ClientStream
+}
+
+func (x *baseNodeSearchPaymentReferencesClient) Recv() (*PaymentReferenceResponse, error) {
+	m := new(PaymentReferenceResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *baseNodeClient) SearchPaymentReferencesViaOutputHash(ctx context.Context, in *FetchMatchingUtxosRequest, opts ...grpc.CallOption) (BaseNode_SearchPaymentReferencesViaOutputHashClient, error) {
+	stream, err := c.cc.NewStream(ctx, &_BaseNode_serviceDesc.Streams[13], "/tari.rpc.BaseNode/SearchPaymentReferencesViaOutputHash", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &baseNodeSearchPaymentReferencesViaOutputHashClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type BaseNode_SearchPaymentReferencesViaOutputHashClient interface {
+	Recv() (*PaymentReferenceResponse, error)
+	grpc.ClientStream
+}
+
+type baseNodeSearchPaymentReferencesViaOutputHashClient struct {
+	grpc.ClientStream
+}
+
+func (x *baseNodeSearchPaymentReferencesViaOutputHashClient) Recv() (*PaymentReferenceResponse, error) {
+	m := new(PaymentReferenceResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // BaseNodeServer is the server API for BaseNode service.
 // All implementations must embed UnimplementedBaseNodeServer
 // for forward compatibility
@@ -724,7 +802,7 @@ type BaseNodeServer interface {
 	// Returns Block Fees
 	GetBlockFees(context.Context, *BlockGroupRequest) (*BlockGroupResponse, error)
 	// Get Version
-	GetVersion(context.Context, *Empty) (*StringValue, error)
+	GetVersion(context.Context, *Empty) (*BaseNodeGetVersionResponse, error)
 	// Check for new updates
 	CheckForUpdates(context.Context, *Empty) (*SoftwareUpdate, error)
 	// Get coins in circulation
@@ -773,11 +851,16 @@ type BaseNodeServer interface {
 	GetMempoolStats(context.Context, *Empty) (*MempoolStatsResponse, error)
 	// Get VNs
 	GetActiveValidatorNodes(*GetActiveValidatorNodesRequest, BaseNode_GetActiveValidatorNodesServer) error
+	GetValidatorNodeChanges(context.Context, *GetValidatorNodeChangesRequest) (*GetValidatorNodeChangesResponse, error)
 	GetShardKey(context.Context, *GetShardKeyRequest) (*GetShardKeyResponse, error)
 	// Get templates
 	GetTemplateRegistrations(*GetTemplateRegistrationsRequest, BaseNode_GetTemplateRegistrationsServer) error
 	GetSideChainUtxos(*GetSideChainUtxosRequest, BaseNode_GetSideChainUtxosServer) error
 	GetNetworkState(context.Context, *GetNetworkStateRequest) (*GetNetworkStateResponse, error)
+	// PayRef (Payment Reference) lookup for block explorers and external services
+	SearchPaymentReferences(*SearchPaymentReferencesRequest, BaseNode_SearchPaymentReferencesServer) error
+	// PayRef (Payment Reference) lookup for block explorers and external services via output hash
+	SearchPaymentReferencesViaOutputHash(*FetchMatchingUtxosRequest, BaseNode_SearchPaymentReferencesViaOutputHashServer) error
 	mustEmbedUnimplementedBaseNodeServer()
 }
 
@@ -806,7 +889,7 @@ func (UnimplementedBaseNodeServer) GetBlockSize(context.Context, *BlockGroupRequ
 func (UnimplementedBaseNodeServer) GetBlockFees(context.Context, *BlockGroupRequest) (*BlockGroupResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetBlockFees not implemented")
 }
-func (UnimplementedBaseNodeServer) GetVersion(context.Context, *Empty) (*StringValue, error) {
+func (UnimplementedBaseNodeServer) GetVersion(context.Context, *Empty) (*BaseNodeGetVersionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetVersion not implemented")
 }
 func (UnimplementedBaseNodeServer) CheckForUpdates(context.Context, *Empty) (*SoftwareUpdate, error) {
@@ -884,6 +967,9 @@ func (UnimplementedBaseNodeServer) GetMempoolStats(context.Context, *Empty) (*Me
 func (UnimplementedBaseNodeServer) GetActiveValidatorNodes(*GetActiveValidatorNodesRequest, BaseNode_GetActiveValidatorNodesServer) error {
 	return status.Errorf(codes.Unimplemented, "method GetActiveValidatorNodes not implemented")
 }
+func (UnimplementedBaseNodeServer) GetValidatorNodeChanges(context.Context, *GetValidatorNodeChangesRequest) (*GetValidatorNodeChangesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetValidatorNodeChanges not implemented")
+}
 func (UnimplementedBaseNodeServer) GetShardKey(context.Context, *GetShardKeyRequest) (*GetShardKeyResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetShardKey not implemented")
 }
@@ -895,6 +981,12 @@ func (UnimplementedBaseNodeServer) GetSideChainUtxos(*GetSideChainUtxosRequest, 
 }
 func (UnimplementedBaseNodeServer) GetNetworkState(context.Context, *GetNetworkStateRequest) (*GetNetworkStateResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetNetworkState not implemented")
+}
+func (UnimplementedBaseNodeServer) SearchPaymentReferences(*SearchPaymentReferencesRequest, BaseNode_SearchPaymentReferencesServer) error {
+	return status.Errorf(codes.Unimplemented, "method SearchPaymentReferences not implemented")
+}
+func (UnimplementedBaseNodeServer) SearchPaymentReferencesViaOutputHash(*FetchMatchingUtxosRequest, BaseNode_SearchPaymentReferencesViaOutputHashServer) error {
+	return status.Errorf(codes.Unimplemented, "method SearchPaymentReferencesViaOutputHash not implemented")
 }
 func (UnimplementedBaseNodeServer) mustEmbedUnimplementedBaseNodeServer() {}
 
@@ -1533,6 +1625,24 @@ func (x *baseNodeGetActiveValidatorNodesServer) Send(m *GetActiveValidatorNodesR
 	return x.ServerStream.SendMsg(m)
 }
 
+func _BaseNode_GetValidatorNodeChanges_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetValidatorNodeChangesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BaseNodeServer).GetValidatorNodeChanges(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/tari.rpc.BaseNode/GetValidatorNodeChanges",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BaseNodeServer).GetValidatorNodeChanges(ctx, req.(*GetValidatorNodeChangesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _BaseNode_GetShardKey_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetShardKeyRequest)
 	if err := dec(in); err != nil {
@@ -1609,6 +1719,48 @@ func _BaseNode_GetNetworkState_Handler(srv interface{}, ctx context.Context, dec
 		return srv.(BaseNodeServer).GetNetworkState(ctx, req.(*GetNetworkStateRequest))
 	}
 	return interceptor(ctx, in, info, handler)
+}
+
+func _BaseNode_SearchPaymentReferences_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(SearchPaymentReferencesRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(BaseNodeServer).SearchPaymentReferences(m, &baseNodeSearchPaymentReferencesServer{stream})
+}
+
+type BaseNode_SearchPaymentReferencesServer interface {
+	Send(*PaymentReferenceResponse) error
+	grpc.ServerStream
+}
+
+type baseNodeSearchPaymentReferencesServer struct {
+	grpc.ServerStream
+}
+
+func (x *baseNodeSearchPaymentReferencesServer) Send(m *PaymentReferenceResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func _BaseNode_SearchPaymentReferencesViaOutputHash_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(FetchMatchingUtxosRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(BaseNodeServer).SearchPaymentReferencesViaOutputHash(m, &baseNodeSearchPaymentReferencesViaOutputHashServer{stream})
+}
+
+type BaseNode_SearchPaymentReferencesViaOutputHashServer interface {
+	Send(*PaymentReferenceResponse) error
+	grpc.ServerStream
+}
+
+type baseNodeSearchPaymentReferencesViaOutputHashServer struct {
+	grpc.ServerStream
+}
+
+func (x *baseNodeSearchPaymentReferencesViaOutputHashServer) Send(m *PaymentReferenceResponse) error {
+	return x.ServerStream.SendMsg(m)
 }
 
 var _BaseNode_serviceDesc = grpc.ServiceDesc{
@@ -1708,6 +1860,10 @@ var _BaseNode_serviceDesc = grpc.ServiceDesc{
 			Handler:    _BaseNode_GetMempoolStats_Handler,
 		},
 		{
+			MethodName: "GetValidatorNodeChanges",
+			Handler:    _BaseNode_GetValidatorNodeChanges_Handler,
+		},
+		{
 			MethodName: "GetShardKey",
 			Handler:    _BaseNode_GetShardKey_Handler,
 		},
@@ -1775,6 +1931,16 @@ var _BaseNode_serviceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "GetSideChainUtxos",
 			Handler:       _BaseNode_GetSideChainUtxos_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "SearchPaymentReferences",
+			Handler:       _BaseNode_SearchPaymentReferences_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "SearchPaymentReferencesViaOutputHash",
+			Handler:       _BaseNode_SearchPaymentReferencesViaOutputHash_Handler,
 			ServerStreams: true,
 		},
 	},
