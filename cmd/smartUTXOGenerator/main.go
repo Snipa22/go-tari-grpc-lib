@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/Snipa22/core-go-lib/helpers"
 	core "github.com/Snipa22/core-go-lib/milieu"
-	"github.com/Snipa22/go-tari-grpc-lib/v2/walletGRPC"
+	"github.com/Snipa22/go-tari-grpc-lib/v3/walletGRPC"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/robfig/cron/v3"
 )

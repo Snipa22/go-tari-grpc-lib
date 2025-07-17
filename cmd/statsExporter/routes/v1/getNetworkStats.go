@@ -2,10 +2,10 @@ package v1
 
 import (
 	"fmt"
-	"github.com/Snipa22/go-tari-grpc-lib/v2/cmd/statsExporter/subsystems/blockTemplateCache"
-	"github.com/Snipa22/go-tari-grpc-lib/v2/cmd/statsExporter/subsystems/tipDataCache"
-	"github.com/Snipa22/go-tari-grpc-lib/v2/nodeGRPC"
-	"github.com/Snipa22/go-tari-grpc-lib/v2/tari_generated"
+	"github.com/Snipa22/go-tari-grpc-lib/v3/cmd/statsExporter/subsystems/blockTemplateCache"
+	"github.com/Snipa22/go-tari-grpc-lib/v3/cmd/statsExporter/subsystems/tipDataCache"
+	"github.com/Snipa22/go-tari-grpc-lib/v3/nodeGRPC"
+	"github.com/Snipa22/go-tari-grpc-lib/v3/tari_generated"
 	"github.com/gin-gonic/gin"
 )
 

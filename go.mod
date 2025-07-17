@@ -1,4 +1,4 @@
-module github.com/Snipa22/go-tari-grpc-lib/v2
+module github.com/Snipa22/go-tari-grpc-lib/v3
 
 go 1.24
 

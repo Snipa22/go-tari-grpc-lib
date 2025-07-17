@@ -4,8 +4,8 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"github.com/Snipa22/go-tari-grpc-lib/v2/nodeGRPC"
-	"github.com/Snipa22/go-tari-grpc-lib/v2/walletGRPC"
+	"github.com/Snipa22/go-tari-grpc-lib/v3/nodeGRPC"
+	"github.com/Snipa22/go-tari-grpc-lib/v3/walletGRPC"
 	"github.com/coreos/go-systemd/v22/dbus"
 )
 
