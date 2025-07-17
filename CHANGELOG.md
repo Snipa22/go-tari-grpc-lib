@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.0.1](https://github.com/Snipa22/go-tari-grpc-lib/compare/v3.0.0...v3.0.1) (2025-07-17)
+
+
+### Bug Fixes
+
+* **main:** tag v3 module ([e0fb5c9](https://github.com/Snipa22/go-tari-grpc-lib/commit/e0fb5c9969cac401bd32df22673fc300df8abe2d))
+
 ## [3.0.0](https://github.com/Snipa22/go-tari-grpc-lib/compare/v2.4.1...v3.0.0) (2025-07-17)
 
 
