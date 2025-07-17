@@ -1,5 +1,22 @@
 # Changelog
 
+## [3.0.0](https://github.com/Snipa22/go-tari-grpc-lib/compare/v2.4.1...v3.0.0) (2025-07-17)
+
+
+### ⚠ BREAKING CHANGES
+
+* **nodeGRPC:** change connection structure
+* **protos:** upgrade to 4.9.0 protos
+
+### Features
+
+* **nodeGRPC:** change connection structure ([558e8b7](https://github.com/Snipa22/go-tari-grpc-lib/commit/558e8b7199ec5f9359bc472dd70470d6c9fd9296))
+
+
+### Miscellaneous Chores
+
+* **protos:** upgrade to 4.9.0 protos ([1575e4a](https://github.com/Snipa22/go-tari-grpc-lib/commit/1575e4a2cc61ce217828e1fd4f834147d76117c6))
+
 ## [2.4.1](https://github.com/Snipa22/go-tari-grpc-lib/compare/v2.4.0...v2.4.1) (2025-06-23)
 
 
