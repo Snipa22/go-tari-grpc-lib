@@ -47,6 +47,12 @@ func GetBlockWithCoinbases(requestData *tari_generated.GetNewBlockWithCoinbasesR
 	return client.GetNewBlockWithCoinbases(context.Background(), requestData)
 }
 
+// GetNewBlockTemplateWithCoinbases This incorrectly tells you that you're getting a template, but the response is a full block
+func GetNewBlockTemplateWithCoinbases(requestData *tari_generated.GetNewBlockTemplateWithCoinbasesRequest) (*tari_generated.GetNewBlockResult, error) {
+	client := tari_generated.NewBaseNodeClient(grpcConn)
+	return client.GetNewBlockTemplateWithCoinbases(context.Background(), requestData)
+}
+
 // GetNetworkState wraps the GetNetworkState RPC call
 func GetNetworkState() (*tari_generated.GetNetworkStateResponse, error) {
 	client := tari_generated.NewBaseNodeClient(grpcConn)
