@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.1.0](https://github.com/Snipa22/go-tari-grpc-lib/compare/v3.0.1...v3.1.0) (2025-08-06)
+
+
+### Features
+
+* **nodeGRPC:** add new grpc call ([a3ba7dd](https://github.com/Snipa22/go-tari-grpc-lib/commit/a3ba7dde7c478fffc86dc12492976f1953914e11))
+
 ## [3.0.1](https://github.com/Snipa22/go-tari-grpc-lib/compare/v3.0.0...v3.0.1) (2025-07-17)
 
 
