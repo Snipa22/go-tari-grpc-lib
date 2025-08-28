@@ -3,11 +3,12 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/Snipa22/go-tari-grpc-lib/v3/nodeGRPC"
-	"github.com/Snipa22/go-tari-grpc-lib/v3/tari_generated"
 	"log"
 	"strings"
 	"unicode"
+
+	"github.com/Snipa22/go-tari-grpc-lib/v3/nodeGRPC"
+	"github.com/Snipa22/go-tari-grpc-lib/v3/tari_generated"
 )
 
 func makeRange(min uint64, max uint64) []uint64 {
@@ -16,6 +17,24 @@ func makeRange(min uint64, max uint64) []uint64 {
 		a[i] = min + uint64(i)
 	}
 	return a
+}
+func txExtraParser(txExtra []byte, prefix string) string {
+	txString := string(txExtra)
+	if strings.HasPrefix(string(txExtra), "WUF") {
+		return fmt.Sprintf("%s_%s", prefix, txString[0:12])
+	}
+	if strings.HasPrefix(string(txExtra), "/pool.kryptex.com/") {
+		return fmt.Sprintf("%s_pool.kryptex.com", prefix)
+	}
+	if strings.HasPrefix(string(txExtra), "H9.com.") {
+		return fmt.Sprintf("%s_H9.com", prefix)
+	}
+	return strings.Map(func(r rune) rune {
+		if unicode.IsPrint(r) {
+			return r
+		}
+		return -1
+	}, fmt.Sprintf("%s_%s", prefix, txString))
 }
 
 func main() {
@@ -62,16 +81,7 @@ func main() {
 						}
 						txExtra := features.GetCoinbaseExtra()
 						if txExtra != nil {
-							if strings.Contains(string(txExtra), "WUFJagtech") {
-								results["RXM_"+string(txExtra[0:12])] = append(results["RXM_"+string(txExtra[0:12])], block.Header.Height)
-								break
-							}
-							poolID := strings.Map(func(r rune) rune {
-								if unicode.IsPrint(r) {
-									return r
-								}
-								return -1
-							}, "RXM_"+string(txExtra))
+							poolID := txExtraParser(txExtra, "RXM")
 							results[poolID] = append(results[poolID], block.Header.Height)
 							break
 						} else {
@@ -98,16 +108,7 @@ func main() {
 						}
 						txExtra := features.GetCoinbaseExtra()
 						if txExtra != nil {
-							if strings.Contains(string(txExtra), "WUFJagtech") {
-								results["RXT_"+string(txExtra[0:12])] = append(results["RXT_"+string(txExtra[0:12])], block.Header.Height)
-								break
-							}
-							poolID := strings.Map(func(r rune) rune {
-								if unicode.IsPrint(r) {
-									return r
-								}
-								return -1
-							}, "RXT_"+string(txExtra))
+							poolID := txExtraParser(txExtra, "RXT")
 							results[poolID] = append(results[poolID], block.Header.Height)
 							break
 						} else {
@@ -120,10 +121,10 @@ func main() {
 					}
 				}
 				continue
-			} else {
-				// Sha3x is ID 1, but using it as a catch here.
+			} else if block.Header.Pow.GetPowAlgo() == 3 {
+				// C29 Tari
 				if len(outputs) == 0 {
-					results["SHA3X_unknown_no_output"] = append(results["unknown_no_output"], block.Header.Height)
+					results["C29_unknown_no_output"] = append(results["C29_unknown_no_output"], block.Header.Height)
 					continue
 				}
 				for _, output := range outputs {
@@ -134,31 +135,42 @@ func main() {
 						}
 						txExtra := features.GetCoinbaseExtra()
 						if txExtra != nil {
-							var poolID string
-							if len(txExtra) >= 12 {
-								poolID = strings.Map(func(r rune) rune {
-									if unicode.IsPrint(r) && r < 129 {
-										return r
-									}
-									return -1
-								}, "SHA3X_"+string(txExtra[0:12]))
-							} else {
-								poolID = strings.Map(func(r rune) rune {
-									if unicode.IsPrint(r) && r < 129 {
-										return r
-									}
-									return -1
-								}, "SHA3X_"+string(txExtra))
-							}
-
+							poolID := txExtraParser(txExtra, "C29")
 							results[poolID] = append(results[poolID], block.Header.Height)
 							break
 						} else {
-							results["SHA3X_unknown_no_tx_extra"] = append(results["unknown_no_tx_extra"], block.Header.Height)
+							results["C29_unknown_no_tx_extra"] = append(results["C29_unknown_no_tx_extra"], block.Header.Height)
 							continue
 						}
 					} else {
-						results["SHA3X_unknown_no_features"] = append(results["unknown_no_features"], block.Header.Height)
+						results["C29_unknown_no_features"] = append(results["C29_unknown_no_features"], block.Header.Height)
+						continue
+					}
+				}
+				continue
+			} else {
+				// Sha3x is ID 1, but using it as a catch here.
+				if len(outputs) == 0 {
+					results["SHA3X_unknown_no_output"] = append(results["SHA3X_unknown_no_output"], block.Header.Height)
+					continue
+				}
+				for _, output := range outputs {
+					features := output.GetFeatures()
+					if features != nil {
+						if features.OutputType != 1 {
+							continue
+						}
+						txExtra := features.GetCoinbaseExtra()
+						if txExtra != nil {
+							poolID := txExtraParser(txExtra, "SHA3X")
+							results[poolID] = append(results[poolID], block.Header.Height)
+							break
+						} else {
+							results["SHA3X_unknown_no_tx_extra"] = append(results["SHA3X_unknown_no_tx_extra"], block.Header.Height)
+							continue
+						}
+					} else {
+						results["SHA3X_unknown_no_features"] = append(results["SHA3X_unknown_no_features"], block.Header.Height)
 						continue
 					}
 				}
