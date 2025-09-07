@@ -23,6 +23,7 @@ syntax = "proto3";
 
 package tari.rpc;
 option go_package = "github.com/Snipa22/go-tari-grpc-lib/tari_generated";
+
 import "google/protobuf/timestamp.proto";
 
 message NodeIdentity {
@@ -66,7 +67,7 @@ message NetworkStatusResponse {
     uint32 num_node_connections = 3;
 }
 
-message Address{
+message Address {
     bytes address =1;
     string last_seen = 2;
     uint32 connection_attempts = 3;
