@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.2.0](https://github.com/Snipa22/go-tari-grpc-lib/compare/v3.1.0...v3.2.0) (2025-09-07)
+
+
+### Features
+
+* **protos:** update to 5.0.1 ([b9298a8](https://github.com/Snipa22/go-tari-grpc-lib/commit/b9298a8c8d866d0cfa607746c5c810eb855965ab))
+
 ## [3.1.0](https://github.com/Snipa22/go-tari-grpc-lib/compare/v3.0.1...v3.1.0) (2025-08-06)
 
 
