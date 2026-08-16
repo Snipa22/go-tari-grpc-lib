@@ -1,0 +1,8 @@
+[tools]
+go = "1.24"
+protoc = "29.1"
+protoc-gen-go = "latest"
+protoc-gen-go-grpc = "latest"
+
+[settings]
+experimental = true
