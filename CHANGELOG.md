@@ -1,5 +1,17 @@
 # Changelog
 
+## [4.0.0](https://github.com/Snipa22/go-tari-grpc-lib/compare/v3.2.0...v4.0.0) (2026-08-16)
+
+
+### ⚠ BREAKING CHANGES
+
+* The nodeGRPC and walletGRPC wrapper packages have moved to github.com/Snipa22/go-tari-lib. The cmd/ tool binaries (getNodeIdentity, walletValidator, walletBalanceExporter, statsExporter, walletSweeper, nodeAutoRebooter, blockFindCalculator, walletAutoRebooter, blockWinners, walletUTXOCreator, walletPaymentSender, smartUTXOGenerator) have moved to github.com/Snipa22/go-tari-tools. Consumers of this library must update their imports accordingly.
+
+### Features
+
+* regenerate GRPC protos against Tari core v5.6.0 ([abc39e1](https://github.com/Snipa22/go-tari-grpc-lib/commit/abc39e19311d15d46e4d88c6bcd224527a190962))
+* strip go-tari-grpc-lib down to protos and generated code only ([e4b4253](https://github.com/Snipa22/go-tari-grpc-lib/commit/e4b4253e597d7f8c211f0273ccccbfcbd9e58d3a))
+
 ## [3.2.0](https://github.com/Snipa22/go-tari-grpc-lib/compare/v3.1.0...v3.2.0) (2025-09-07)
 
 
