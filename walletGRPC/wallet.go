@@ -200,3 +200,219 @@ func GetAddresses(ctx context.Context) (*tari_generated.GetCompleteAddressRespon
 	client := tari_generated.NewWalletClient(getConn())
 	return client.GetCompleteAddress(ctx, nil)
 }
+
+// ---- Additional wrapper functions covering the remaining TariWallet service RPCs ----
+
+// GetVersion wraps the GetVersion GRPC call, returning the wallet's build/version info.
+func GetVersion(ctx context.Context, req *tari_generated.GetVersionRequest) (*tari_generated.GetVersionResponse, error) {
+	client := tari_generated.NewWalletClient(getConn())
+	return client.GetVersion(ctx, req)
+}
+
+// CheckForUpdates wraps the CheckForUpdates GRPC call, asking the wallet to check for a newer software release.
+func CheckForUpdates(ctx context.Context) (*tari_generated.SoftwareUpdate, error) {
+	client := tari_generated.NewWalletClient(getConn())
+	return client.CheckForUpdates(ctx, &tari_generated.Empty{})
+}
+
+// Identify wraps the Identify GRPC call, returning the wallet's node identity.
+func Identify(ctx context.Context, req *tari_generated.GetIdentityRequest) (*tari_generated.GetIdentityResponse, error) {
+	client := tari_generated.NewWalletClient(getConn())
+	return client.Identify(ctx, req)
+}
+
+// GetAddress wraps the GetAddress GRPC call, returning the wallet's interactive address.
+func GetAddress(ctx context.Context) (*tari_generated.GetAddressResponse, error) {
+	client := tari_generated.NewWalletClient(getConn())
+	return client.GetAddress(ctx, &tari_generated.Empty{})
+}
+
+// GetPaymentIdAddress wraps the GetPaymentIdAddress GRPC call, deriving a complete address for the supplied payment ID.
+func GetPaymentIdAddress(ctx context.Context, req *tari_generated.GetPaymentIdAddressRequest) (*tari_generated.GetCompleteAddressResponse, error) {
+	client := tari_generated.NewWalletClient(getConn())
+	return client.GetPaymentIdAddress(ctx, req)
+}
+
+// PrepareOneSidedTransactionForSigning wraps the PrepareOneSidedTransactionForSigning GRPC call. It builds an unsigned one-sided transaction for external/offline signing; it does not broadcast anything.
+func PrepareOneSidedTransactionForSigning(ctx context.Context, req *tari_generated.PrepareOneSidedTransactionForSigningRequest) (*tari_generated.PrepareOneSidedTransactionForSigningResponse, error) {
+	client := tari_generated.NewWalletClient(getConn())
+	return client.PrepareOneSidedTransactionForSigning(ctx, req)
+}
+
+// BroadcastSignedOneSidedTransaction wraps the BroadcastSignedOneSidedTransaction GRPC call, submitting a previously-signed one-sided transaction (see PrepareOneSidedTransactionForSigning) to the network.
+func BroadcastSignedOneSidedTransaction(ctx context.Context, req *tari_generated.BroadcastSignedOneSidedTransactionRequest) (*tari_generated.BroadcastSignedOneSidedTransactionResponse, error) {
+	client := tari_generated.NewWalletClient(getConn())
+	return client.BroadcastSignedOneSidedTransaction(ctx, req)
+}
+
+// GetTransactionPayRefs wraps the GetTransactionPayRefs GRPC call, returning payment reference data for the requested transactions.
+func GetTransactionPayRefs(ctx context.Context, req *tari_generated.GetTransactionPayRefsRequest) (*tari_generated.GetTransactionPayRefsResponse, error) {
+	client := tari_generated.NewWalletClient(getConn())
+	return client.GetTransactionPayRefs(ctx, req)
+}
+
+// GetUnspentAmounts wraps the GetUnspentAmounts GRPC call, returning the amounts of all unspent outputs in the wallet.
+func GetUnspentAmounts(ctx context.Context) (*tari_generated.GetUnspentAmountsResponse, error) {
+	client := tari_generated.NewWalletClient(getConn())
+	return client.GetUnspentAmounts(ctx, &tari_generated.Empty{})
+}
+
+// ImportUtxos wraps the ImportUtxos GRPC call, importing externally-supplied UTXOs into the wallet's output manager.
+func ImportUtxos(ctx context.Context, req *tari_generated.ImportUtxosRequest) (*tari_generated.ImportUtxosResponse, error) {
+	client := tari_generated.NewWalletClient(getConn())
+	return client.ImportUtxos(ctx, req)
+}
+
+// GetNetworkStatus wraps the GetNetworkStatus GRPC call, returning the wallet's view of its network/connectivity status.
+func GetNetworkStatus(ctx context.Context) (*tari_generated.NetworkStatusResponse, error) {
+	client := tari_generated.NewWalletClient(getConn())
+	return client.GetNetworkStatus(ctx, &tari_generated.Empty{})
+}
+
+// GetConnectedHttpPeer wraps the GetConnectedHttpPeer GRPC call, returning info about the wallet's connected HTTP peer, if any.
+func GetConnectedHttpPeer(ctx context.Context) (*tari_generated.GetConnectedHttpPeerResponse, error) {
+	client := tari_generated.NewWalletClient(getConn())
+	return client.GetConnectedHttpPeer(ctx, &tari_generated.Empty{})
+}
+
+// CancelTransaction wraps the CancelTransaction GRPC call, cancelling a pending transaction by ID.
+func CancelTransaction(ctx context.Context, req *tari_generated.CancelTransactionRequest) (*tari_generated.CancelTransactionResponse, error) {
+	client := tari_generated.NewWalletClient(getConn())
+	return client.CancelTransaction(ctx, req)
+}
+
+// SendShaAtomicSwapTransaction wraps the SendShaAtomicSwapTransaction GRPC call, initiating a SHA atomic swap (HTLC-style) transaction.
+func SendShaAtomicSwapTransaction(ctx context.Context, req *tari_generated.SendShaAtomicSwapRequest) (*tari_generated.SendShaAtomicSwapResponse, error) {
+	client := tari_generated.NewWalletClient(getConn())
+	return client.SendShaAtomicSwapTransaction(ctx, req)
+}
+
+// CreateBurnTransaction wraps the CreateBurnTransaction GRPC call, creating and broadcasting a coin-burn transaction.
+func CreateBurnTransaction(ctx context.Context, req *tari_generated.CreateBurnTransactionRequest) (*tari_generated.CreateBurnTransactionResponse, error) {
+	client := tari_generated.NewWalletClient(getConn())
+	return client.CreateBurnTransaction(ctx, req)
+}
+
+// ClaimShaAtomicSwapTransaction wraps the ClaimShaAtomicSwapTransaction GRPC call, claiming the output of a previously-sent SHA atomic swap transaction.
+func ClaimShaAtomicSwapTransaction(ctx context.Context, req *tari_generated.ClaimShaAtomicSwapRequest) (*tari_generated.ClaimShaAtomicSwapResponse, error) {
+	client := tari_generated.NewWalletClient(getConn())
+	return client.ClaimShaAtomicSwapTransaction(ctx, req)
+}
+
+// ClaimHtlcRefundTransaction wraps the ClaimHtlcRefundTransaction GRPC call, reclaiming funds from an expired/unclaimed HTLC output.
+func ClaimHtlcRefundTransaction(ctx context.Context, req *tari_generated.ClaimHtlcRefundRequest) (*tari_generated.ClaimHtlcRefundResponse, error) {
+	client := tari_generated.NewWalletClient(getConn())
+	return client.ClaimHtlcRefundTransaction(ctx, req)
+}
+
+// CreateTemplateRegistration wraps the CreateTemplateRegistration GRPC call, registering a validator-node template on-chain.
+func CreateTemplateRegistration(ctx context.Context, req *tari_generated.CreateTemplateRegistrationRequest) (*tari_generated.CreateTemplateRegistrationResponse, error) {
+	client := tari_generated.NewWalletClient(getConn())
+	return client.CreateTemplateRegistration(ctx, req)
+}
+
+// SignMessage wraps the SignMessage GRPC call, signing an arbitrary message with the wallet's private key.
+func SignMessage(ctx context.Context, req *tari_generated.SignMessageRequest) (*tari_generated.SignMessageResponse, error) {
+	client := tari_generated.NewWalletClient(getConn())
+	return client.SignMessage(ctx, req)
+}
+
+// ImportTransactions wraps the ImportTransactions GRPC call, importing externally-supplied transaction records into the wallet's transaction history.
+func ImportTransactions(ctx context.Context, req *tari_generated.ImportTransactionsRequest) (*tari_generated.ImportTransactionsResponse, error) {
+	client := tari_generated.NewWalletClient(getConn())
+	return client.ImportTransactions(ctx, req)
+}
+
+// GetAllCompletedTransactions wraps the GetAllCompletedTransactions GRPC call, returning every completed transaction in a single (non-streamed) response.
+func GetAllCompletedTransactions(ctx context.Context, req *tari_generated.GetAllCompletedTransactionsRequest) (*tari_generated.GetAllCompletedTransactionsResponse, error) {
+	client := tari_generated.NewWalletClient(getConn())
+	return client.GetAllCompletedTransactions(ctx, req)
+}
+
+// GetPaymentByReference wraps the GetPaymentByReference GRPC call, looking up payment details by payment reference.
+func GetPaymentByReference(ctx context.Context, req *tari_generated.GetPaymentByReferenceRequest) (*tari_generated.GetPaymentByReferenceResponse, error) {
+	client := tari_generated.NewWalletClient(getConn())
+	return client.GetPaymentByReference(ctx, req)
+}
+
+// GetFeeEstimate wraps the GetFeeEstimate GRPC call, estimating the fee for a prospective transaction without sending it.
+func GetFeeEstimate(ctx context.Context, req *tari_generated.GetFeeEstimateRequest) (*tari_generated.GetFeeEstimateResponse, error) {
+	client := tari_generated.NewWalletClient(getConn())
+	return client.GetFeeEstimate(ctx, req)
+}
+
+// GetFeePerGramStats wraps the GetFeePerGramStats GRPC call, returning current network fee-per-gram statistics.
+func GetFeePerGramStats(ctx context.Context, req *tari_generated.GetFeePerGramStatsRequest) (*tari_generated.GetFeePerGramStatsResponse, error) {
+	client := tari_generated.NewWalletClient(getConn())
+	return client.GetFeePerGramStats(ctx, req)
+}
+
+// ReplaceByFee wraps the ReplaceByFee GRPC call, resubmitting a pending transaction with a higher fee (RBF).
+func ReplaceByFee(ctx context.Context, req *tari_generated.ReplaceByFeeRequest) (*tari_generated.ReplaceByFeeResponse, error) {
+	client := tari_generated.NewWalletClient(getConn())
+	return client.ReplaceByFee(ctx, req)
+}
+
+// UserPayForFee wraps the UserPayForFee GRPC call, having the wallet user cover the fee for a transaction on behalf of another party.
+func UserPayForFee(ctx context.Context, req *tari_generated.UserPayForFeeRequest) (*tari_generated.UserPayForFeeResponse, error) {
+	client := tari_generated.NewWalletClient(getConn())
+	return client.UserPayForFee(ctx, req)
+}
+
+// RegisterValidatorNode wraps the RegisterValidatorNode GRPC call, registering this node as a validator node on-chain.
+func RegisterValidatorNode(ctx context.Context, req *tari_generated.RegisterValidatorNodeRequest) (*tari_generated.RegisterValidatorNodeResponse, error) {
+	client := tari_generated.NewWalletClient(getConn())
+	return client.RegisterValidatorNode(ctx, req)
+}
+
+// SubmitValidatorEvictionProof wraps the SubmitValidatorEvictionProof GRPC call, submitting proof to evict a misbehaving validator node.
+func SubmitValidatorEvictionProof(ctx context.Context, req *tari_generated.SubmitValidatorEvictionProofRequest) (*tari_generated.SubmitValidatorEvictionProofResponse, error) {
+	client := tari_generated.NewWalletClient(getConn())
+	return client.SubmitValidatorEvictionProof(ctx, req)
+}
+
+// SubmitValidatorNodeExit wraps the SubmitValidatorNodeExit GRPC call, voluntarily exiting this node from the validator node set.
+func SubmitValidatorNodeExit(ctx context.Context, req *tari_generated.SubmitValidatorNodeExitRequest) (*tari_generated.SubmitValidatorNodeExitResponse, error) {
+	client := tari_generated.NewWalletClient(getConn())
+	return client.SubmitValidatorNodeExit(ctx, req)
+}
+
+// StreamTransactionEvents wraps the StreamTransactionEvents streaming GRPC call, draining every transaction event pushed by the wallet into a slice. It blocks until the server closes the stream, so it will not return for wallets that keep the stream open indefinitely without a context deadline/cancellation.
+func StreamTransactionEvents(ctx context.Context, req *tari_generated.TransactionEventRequest) ([]*tari_generated.TransactionEventResponse, error) {
+	client := tari_generated.NewWalletClient(getConn())
+	streamClient, err := client.StreamTransactionEvents(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	resp := make([]*tari_generated.TransactionEventResponse, 0)
+	for {
+		item, err := streamClient.Recv()
+		if err != nil {
+			if err == io.EOF {
+				return resp, nil
+			}
+			return nil, err
+		}
+		resp = append(resp, item)
+	}
+}
+
+// GetAllCompletedTransactionsStream wraps the GetAllCompletedTransactionsStream streaming GRPC call, draining every completed transaction pushed by the wallet into a slice.
+func GetAllCompletedTransactionsStream(ctx context.Context, req *tari_generated.GetAllCompletedTransactionsRequest) ([]*tari_generated.GetCompletedTransactionsResponse, error) {
+	client := tari_generated.NewWalletClient(getConn())
+	streamClient, err := client.GetAllCompletedTransactionsStream(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	resp := make([]*tari_generated.GetCompletedTransactionsResponse, 0)
+	for {
+		item, err := streamClient.Recv()
+		if err != nil {
+			if err == io.EOF {
+				return resp, nil
+			}
+			return nil, err
+		}
+		resp = append(resp, item)
+	}
+}
