@@ -1,13 +1,19 @@
 package blockTemplateCache
 
 import (
+	"context"
 	"encoding/binary"
 	"github.com/Snipa22/core-go-lib/milieu"
 	"github.com/Snipa22/go-tari-grpc-lib/v3/nodeGRPC"
 	"github.com/Snipa22/go-tari-grpc-lib/v3/tari_generated"
 	"math/rand"
 	"sync"
+	"time"
 )
+
+// rpcTimeout bounds how long a single GetBlockTemplate call may take. UpdateBlockTemplateCache
+// runs on a fast cron cadence, so a hung upstream call shouldn't be allowed to run indefinitely.
+const rpcTimeout = 5 * time.Second
 
 // poolID is a random byte string used to ID the pool in the coinbase txn
 var poolID *[]byte
@@ -42,13 +48,15 @@ func UpdateBlockTemplateCache(core *milieu.Milieu) {
 	defer func() {
 		running = false
 	}()
+	ctx, cancel := context.WithTimeout(context.Background(), rpcTimeout)
+	defer cancel()
 	if poolID == nil {
 		buf := make([]byte, 8)
 		binary.LittleEndian.PutUint64(buf, rand.Uint64())
 		poolID = &buf
 	}
 
-	blockTemplateResponse, err := nodeGRPC.GetBlockTemplate(&tari_generated.PowAlgo{PowAlgo: tari_generated.PowAlgo_POW_ALGOS_SHA3X})
+	blockTemplateResponse, err := nodeGRPC.GetBlockTemplate(ctx, &tari_generated.PowAlgo{PowAlgo: tari_generated.PowAlgo_POW_ALGOS_SHA3X})
 	if err != nil {
 		core.CaptureException(err)
 		return
@@ -62,7 +70,7 @@ func UpdateBlockTemplateCache(core *milieu.Milieu) {
 	sha3xBTCache.reward = blockTemplateResponse.MinerData.Reward
 	sha3xBTCache.mutex.Unlock()
 
-	blockTemplateResponse, err = nodeGRPC.GetBlockTemplate(&tari_generated.PowAlgo{PowAlgo: tari_generated.PowAlgo_POW_ALGOS_RANDOMXT})
+	blockTemplateResponse, err = nodeGRPC.GetBlockTemplate(ctx, &tari_generated.PowAlgo{PowAlgo: tari_generated.PowAlgo_POW_ALGOS_RANDOMXT})
 	if err != nil {
 		core.CaptureException(err)
 		return
@@ -75,7 +83,7 @@ func UpdateBlockTemplateCache(core *milieu.Milieu) {
 	rxtBTCache.reward = blockTemplateResponse.MinerData.Reward
 	rxtBTCache.mutex.Unlock()
 
-	blockTemplateResponse, err = nodeGRPC.GetBlockTemplate(&tari_generated.PowAlgo{PowAlgo: tari_generated.PowAlgo_POW_ALGOS_RANDOMXM})
+	blockTemplateResponse, err = nodeGRPC.GetBlockTemplate(ctx, &tari_generated.PowAlgo{PowAlgo: tari_generated.PowAlgo_POW_ALGOS_RANDOMXM})
 	if err != nil {
 		core.CaptureException(err)
 		return

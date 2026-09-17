@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"github.com/Snipa22/core-go-lib/helpers"
@@ -21,9 +22,12 @@ func main() {
 	nodeGRPCPtr := flag.String("base-node-grpc-address", "node-pool.tari.jagtech.io:18102", "Address for the base-node, defaults to Impala's public pool")
 	flag.Parse()
 
-	nodeGRPC.InitNodeGRPC(*nodeGRPCPtr)
+	if err := nodeGRPC.InitNodeGRPC(*nodeGRPCPtr); err != nil {
+		milieu.CaptureException(err)
+		milieu.Fatal(err.Error())
+	}
 
-	nodeIdents, err := nodeGRPC.GetNodeIdentity()
+	nodeIdents, err := nodeGRPC.GetNodeIdentity(context.Background())
 	if err != nil {
 		milieu.CaptureException(err)
 		milieu.Fatal(err.Error())

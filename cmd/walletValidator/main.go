@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"github.com/Snipa22/go-tari-grpc-lib/v3/walletGRPC"
 	"log"
@@ -11,15 +12,18 @@ func main() {
 	validateAllTxns := flag.Bool("validate-all-txns", false, "Validate all transactions in the wallet")
 	walletGRPCAddressPtr := flag.String("wallet-grpc-address", "127.0.0.1:18143", "Tari wallet GRPC address")
 	flag.Parse()
-	walletGRPC.InitWalletGRPC(*walletGRPCAddressPtr)
+	if err := walletGRPC.InitWalletGRPC(*walletGRPCAddressPtr); err != nil {
+		log.Fatal(err)
+	}
+	ctx := context.Background()
 	if *revalidateAllTxns {
-		_, err := walletGRPC.RevalidateAllTransactions()
+		_, err := walletGRPC.RevalidateAllTransactions(ctx)
 		if err != nil {
 			log.Fatal(err)
 		}
 	}
 	if *validateAllTxns {
-		_, err := walletGRPC.ValidateAllTransactions()
+		_, err := walletGRPC.ValidateAllTransactions(ctx)
 		if err != nil {
 			log.Fatal(err)
 		}

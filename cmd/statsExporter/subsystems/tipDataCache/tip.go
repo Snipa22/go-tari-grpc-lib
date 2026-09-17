@@ -1,11 +1,17 @@
 package tipDataCache
 
 import (
+	"context"
 	"github.com/Snipa22/core-go-lib/milieu"
 	"github.com/Snipa22/go-tari-grpc-lib/v3/nodeGRPC"
 	"github.com/Snipa22/go-tari-grpc-lib/v3/tari_generated"
 	"sync"
+	"time"
 )
+
+// rpcTimeout bounds how long a single GetTipInfo call may take. UpdateTipData runs on a fast
+// cron cadence, so a hung upstream call shouldn't be allowed to run indefinitely.
+const rpcTimeout = 5 * time.Second
 
 type tipDataStruct struct {
 	tipResponse *tari_generated.TipInfoResponse
@@ -24,7 +30,9 @@ func UpdateTipData(core *milieu.Milieu) {
 	defer func() {
 		running = false
 	}()
-	tipResponse, err := nodeGRPC.GetTipInfo()
+	ctx, cancel := context.WithTimeout(context.Background(), rpcTimeout)
+	defer cancel()
+	tipResponse, err := nodeGRPC.GetTipInfo(ctx)
 	if err != nil {
 		core.Debug(err.Error())
 		core.CaptureException(err)
