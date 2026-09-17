@@ -2,7 +2,10 @@ package walletGRPC
 
 import (
 	"context"
+	"errors"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/Snipa22/go-tari-grpc-lib/v3/tari_generated"
 	"google.golang.org/grpc/codes"
@@ -10,11 +13,12 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-// TestGetVersion_Success verifies that GetVersion forwards the request as-is and returns the response
-// the server sends (arg marshaling + response passthrough).
+// TestGetVersion_Success verifies that GetVersion returns the response the server sends, and that
+// the server actually received a request (arg marshaling for the no-argument/Empty-like case —
+// GetVersion takes only ctx, matching the convention used by every other zero-field-request
+// wrapper in this package, per production-readiness finding 9).
 func TestGetVersion_Success(t *testing.T) {
-	wantReq := &tari_generated.GetVersionRequest{}
-	wantResp := &tari_generated.GetVersionResponse{}
+	wantResp := distinct(&tari_generated.GetVersionResponse{}, 1047)
 	var gotReq *tari_generated.GetVersionRequest
 	srv := &fakeWalletServer{
 		getVersionFn: func(ctx context.Context, req *tari_generated.GetVersionRequest) (*tari_generated.GetVersionResponse, error) {
@@ -26,7 +30,7 @@ func TestGetVersion_Success(t *testing.T) {
 	if err := InitWalletGRPC(addr); err != nil {
 		t.Fatalf("InitWalletGRPC: %v", err)
 	}
-	gotResp, err := GetVersion(context.Background(), wantReq)
+	gotResp, err := GetVersion(context.Background())
 	if err != nil {
 		t.Fatalf("GetVersion returned unexpected error: %v", err)
 	}
@@ -50,7 +54,7 @@ func TestGetVersion_Error(t *testing.T) {
 	if err := InitWalletGRPC(addr); err != nil {
 		t.Fatalf("InitWalletGRPC: %v", err)
 	}
-	_, err := GetVersion(context.Background(), &tari_generated.GetVersionRequest{})
+	_, err := GetVersion(context.Background())
 	if err == nil {
 		t.Fatal("expected an error, got nil")
 	}
@@ -62,7 +66,7 @@ func TestGetVersion_Error(t *testing.T) {
 // TestCheckForUpdates_Success verifies that CheckForUpdates returns the response the server sends, and that
 // the server actually received a request (arg marshaling for the no-argument/Empty case).
 func TestCheckForUpdates_Success(t *testing.T) {
-	wantResp := &tari_generated.SoftwareUpdate{}
+	wantResp := distinct(&tari_generated.SoftwareUpdate{}, 1048)
 	var gotReq *tari_generated.Empty
 	srv := &fakeWalletServer{
 		checkForUpdatesFn: func(ctx context.Context, req *tari_generated.Empty) (*tari_generated.SoftwareUpdate, error) {
@@ -110,8 +114,8 @@ func TestCheckForUpdates_Error(t *testing.T) {
 // TestIdentify_Success verifies that Identify forwards the request as-is and returns the response
 // the server sends (arg marshaling + response passthrough).
 func TestIdentify_Success(t *testing.T) {
-	wantReq := &tari_generated.GetIdentityRequest{}
-	wantResp := &tari_generated.GetIdentityResponse{}
+	wantReq := distinct(&tari_generated.GetIdentityRequest{}, 1001)
+	wantResp := distinct(&tari_generated.GetIdentityResponse{}, 1002)
 	var gotReq *tari_generated.GetIdentityRequest
 	srv := &fakeWalletServer{
 		identifyFn: func(ctx context.Context, req *tari_generated.GetIdentityRequest) (*tari_generated.GetIdentityResponse, error) {
@@ -127,8 +131,8 @@ func TestIdentify_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Identify returned unexpected error: %v", err)
 	}
-	if gotReq == nil {
-		t.Fatal("server did not receive a request")
+	if !proto.Equal(gotReq, wantReq) {
+		t.Fatalf("Identify request = %+v, want %+v", gotReq, wantReq)
 	}
 	if !proto.Equal(gotResp, wantResp) {
 		t.Fatalf("Identify response = %+v, want %+v", gotResp, wantResp)
@@ -159,7 +163,7 @@ func TestIdentify_Error(t *testing.T) {
 // TestGetAddress_Success verifies that GetAddress returns the response the server sends, and that
 // the server actually received a request (arg marshaling for the no-argument/Empty case).
 func TestGetAddress_Success(t *testing.T) {
-	wantResp := &tari_generated.GetAddressResponse{}
+	wantResp := distinct(&tari_generated.GetAddressResponse{}, 1049)
 	var gotReq *tari_generated.Empty
 	srv := &fakeWalletServer{
 		getAddressFn: func(ctx context.Context, req *tari_generated.Empty) (*tari_generated.GetAddressResponse, error) {
@@ -207,8 +211,8 @@ func TestGetAddress_Error(t *testing.T) {
 // TestGetPaymentIdAddress_Success verifies that GetPaymentIdAddress forwards the request as-is and returns the response
 // the server sends (arg marshaling + response passthrough).
 func TestGetPaymentIdAddress_Success(t *testing.T) {
-	wantReq := &tari_generated.GetPaymentIdAddressRequest{}
-	wantResp := &tari_generated.GetCompleteAddressResponse{}
+	wantReq := distinct(&tari_generated.GetPaymentIdAddressRequest{}, 1003)
+	wantResp := distinct(&tari_generated.GetCompleteAddressResponse{}, 1004)
 	var gotReq *tari_generated.GetPaymentIdAddressRequest
 	srv := &fakeWalletServer{
 		getPaymentIdAddressFn: func(ctx context.Context, req *tari_generated.GetPaymentIdAddressRequest) (*tari_generated.GetCompleteAddressResponse, error) {
@@ -224,8 +228,8 @@ func TestGetPaymentIdAddress_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetPaymentIdAddress returned unexpected error: %v", err)
 	}
-	if gotReq == nil {
-		t.Fatal("server did not receive a request")
+	if !proto.Equal(gotReq, wantReq) {
+		t.Fatalf("GetPaymentIdAddress request = %+v, want %+v", gotReq, wantReq)
 	}
 	if !proto.Equal(gotResp, wantResp) {
 		t.Fatalf("GetPaymentIdAddress response = %+v, want %+v", gotResp, wantResp)
@@ -256,8 +260,8 @@ func TestGetPaymentIdAddress_Error(t *testing.T) {
 // TestPrepareOneSidedTransactionForSigning_Success verifies that PrepareOneSidedTransactionForSigning forwards the request as-is and returns the response
 // the server sends (arg marshaling + response passthrough).
 func TestPrepareOneSidedTransactionForSigning_Success(t *testing.T) {
-	wantReq := &tari_generated.PrepareOneSidedTransactionForSigningRequest{}
-	wantResp := &tari_generated.PrepareOneSidedTransactionForSigningResponse{}
+	wantReq := distinct(&tari_generated.PrepareOneSidedTransactionForSigningRequest{}, 1005)
+	wantResp := distinct(&tari_generated.PrepareOneSidedTransactionForSigningResponse{}, 1006)
 	var gotReq *tari_generated.PrepareOneSidedTransactionForSigningRequest
 	srv := &fakeWalletServer{
 		prepareOneSidedTransactionForSigningFn: func(ctx context.Context, req *tari_generated.PrepareOneSidedTransactionForSigningRequest) (*tari_generated.PrepareOneSidedTransactionForSigningResponse, error) {
@@ -273,8 +277,8 @@ func TestPrepareOneSidedTransactionForSigning_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("PrepareOneSidedTransactionForSigning returned unexpected error: %v", err)
 	}
-	if gotReq == nil {
-		t.Fatal("server did not receive a request")
+	if !proto.Equal(gotReq, wantReq) {
+		t.Fatalf("PrepareOneSidedTransactionForSigning request = %+v, want %+v", gotReq, wantReq)
 	}
 	if !proto.Equal(gotResp, wantResp) {
 		t.Fatalf("PrepareOneSidedTransactionForSigning response = %+v, want %+v", gotResp, wantResp)
@@ -305,8 +309,8 @@ func TestPrepareOneSidedTransactionForSigning_Error(t *testing.T) {
 // TestBroadcastSignedOneSidedTransaction_Success verifies that BroadcastSignedOneSidedTransaction forwards the request as-is and returns the response
 // the server sends (arg marshaling + response passthrough).
 func TestBroadcastSignedOneSidedTransaction_Success(t *testing.T) {
-	wantReq := &tari_generated.BroadcastSignedOneSidedTransactionRequest{}
-	wantResp := &tari_generated.BroadcastSignedOneSidedTransactionResponse{}
+	wantReq := distinct(&tari_generated.BroadcastSignedOneSidedTransactionRequest{}, 1007)
+	wantResp := distinct(&tari_generated.BroadcastSignedOneSidedTransactionResponse{}, 1008)
 	var gotReq *tari_generated.BroadcastSignedOneSidedTransactionRequest
 	srv := &fakeWalletServer{
 		broadcastSignedOneSidedTransactionFn: func(ctx context.Context, req *tari_generated.BroadcastSignedOneSidedTransactionRequest) (*tari_generated.BroadcastSignedOneSidedTransactionResponse, error) {
@@ -322,8 +326,8 @@ func TestBroadcastSignedOneSidedTransaction_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("BroadcastSignedOneSidedTransaction returned unexpected error: %v", err)
 	}
-	if gotReq == nil {
-		t.Fatal("server did not receive a request")
+	if !proto.Equal(gotReq, wantReq) {
+		t.Fatalf("BroadcastSignedOneSidedTransaction request = %+v, want %+v", gotReq, wantReq)
 	}
 	if !proto.Equal(gotResp, wantResp) {
 		t.Fatalf("BroadcastSignedOneSidedTransaction response = %+v, want %+v", gotResp, wantResp)
@@ -354,8 +358,8 @@ func TestBroadcastSignedOneSidedTransaction_Error(t *testing.T) {
 // TestGetTransactionPayRefs_Success verifies that GetTransactionPayRefs forwards the request as-is and returns the response
 // the server sends (arg marshaling + response passthrough).
 func TestGetTransactionPayRefs_Success(t *testing.T) {
-	wantReq := &tari_generated.GetTransactionPayRefsRequest{}
-	wantResp := &tari_generated.GetTransactionPayRefsResponse{}
+	wantReq := distinct(&tari_generated.GetTransactionPayRefsRequest{}, 1009)
+	wantResp := distinct(&tari_generated.GetTransactionPayRefsResponse{}, 1010)
 	var gotReq *tari_generated.GetTransactionPayRefsRequest
 	srv := &fakeWalletServer{
 		getTransactionPayRefsFn: func(ctx context.Context, req *tari_generated.GetTransactionPayRefsRequest) (*tari_generated.GetTransactionPayRefsResponse, error) {
@@ -371,8 +375,8 @@ func TestGetTransactionPayRefs_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetTransactionPayRefs returned unexpected error: %v", err)
 	}
-	if gotReq == nil {
-		t.Fatal("server did not receive a request")
+	if !proto.Equal(gotReq, wantReq) {
+		t.Fatalf("GetTransactionPayRefs request = %+v, want %+v", gotReq, wantReq)
 	}
 	if !proto.Equal(gotResp, wantResp) {
 		t.Fatalf("GetTransactionPayRefs response = %+v, want %+v", gotResp, wantResp)
@@ -403,7 +407,7 @@ func TestGetTransactionPayRefs_Error(t *testing.T) {
 // TestGetUnspentAmounts_Success verifies that GetUnspentAmounts returns the response the server sends, and that
 // the server actually received a request (arg marshaling for the no-argument/Empty case).
 func TestGetUnspentAmounts_Success(t *testing.T) {
-	wantResp := &tari_generated.GetUnspentAmountsResponse{}
+	wantResp := distinct(&tari_generated.GetUnspentAmountsResponse{}, 1050)
 	var gotReq *tari_generated.Empty
 	srv := &fakeWalletServer{
 		getUnspentAmountsFn: func(ctx context.Context, req *tari_generated.Empty) (*tari_generated.GetUnspentAmountsResponse, error) {
@@ -451,8 +455,8 @@ func TestGetUnspentAmounts_Error(t *testing.T) {
 // TestImportUtxos_Success verifies that ImportUtxos forwards the request as-is and returns the response
 // the server sends (arg marshaling + response passthrough).
 func TestImportUtxos_Success(t *testing.T) {
-	wantReq := &tari_generated.ImportUtxosRequest{}
-	wantResp := &tari_generated.ImportUtxosResponse{}
+	wantReq := distinct(&tari_generated.ImportUtxosRequest{}, 1011)
+	wantResp := distinct(&tari_generated.ImportUtxosResponse{}, 1012)
 	var gotReq *tari_generated.ImportUtxosRequest
 	srv := &fakeWalletServer{
 		importUtxosFn: func(ctx context.Context, req *tari_generated.ImportUtxosRequest) (*tari_generated.ImportUtxosResponse, error) {
@@ -468,8 +472,8 @@ func TestImportUtxos_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ImportUtxos returned unexpected error: %v", err)
 	}
-	if gotReq == nil {
-		t.Fatal("server did not receive a request")
+	if !proto.Equal(gotReq, wantReq) {
+		t.Fatalf("ImportUtxos request = %+v, want %+v", gotReq, wantReq)
 	}
 	if !proto.Equal(gotResp, wantResp) {
 		t.Fatalf("ImportUtxos response = %+v, want %+v", gotResp, wantResp)
@@ -500,7 +504,7 @@ func TestImportUtxos_Error(t *testing.T) {
 // TestGetNetworkStatus_Success verifies that GetNetworkStatus returns the response the server sends, and that
 // the server actually received a request (arg marshaling for the no-argument/Empty case).
 func TestGetNetworkStatus_Success(t *testing.T) {
-	wantResp := &tari_generated.NetworkStatusResponse{}
+	wantResp := distinct(&tari_generated.NetworkStatusResponse{}, 1051)
 	var gotReq *tari_generated.Empty
 	srv := &fakeWalletServer{
 		getNetworkStatusFn: func(ctx context.Context, req *tari_generated.Empty) (*tari_generated.NetworkStatusResponse, error) {
@@ -548,7 +552,7 @@ func TestGetNetworkStatus_Error(t *testing.T) {
 // TestGetConnectedHttpPeer_Success verifies that GetConnectedHttpPeer returns the response the server sends, and that
 // the server actually received a request (arg marshaling for the no-argument/Empty case).
 func TestGetConnectedHttpPeer_Success(t *testing.T) {
-	wantResp := &tari_generated.GetConnectedHttpPeerResponse{}
+	wantResp := distinct(&tari_generated.GetConnectedHttpPeerResponse{}, 1052)
 	var gotReq *tari_generated.Empty
 	srv := &fakeWalletServer{
 		getConnectedHttpPeerFn: func(ctx context.Context, req *tari_generated.Empty) (*tari_generated.GetConnectedHttpPeerResponse, error) {
@@ -596,8 +600,8 @@ func TestGetConnectedHttpPeer_Error(t *testing.T) {
 // TestCancelTransaction_Success verifies that CancelTransaction forwards the request as-is and returns the response
 // the server sends (arg marshaling + response passthrough).
 func TestCancelTransaction_Success(t *testing.T) {
-	wantReq := &tari_generated.CancelTransactionRequest{}
-	wantResp := &tari_generated.CancelTransactionResponse{}
+	wantReq := distinct(&tari_generated.CancelTransactionRequest{}, 1013)
+	wantResp := distinct(&tari_generated.CancelTransactionResponse{}, 1014)
 	var gotReq *tari_generated.CancelTransactionRequest
 	srv := &fakeWalletServer{
 		cancelTransactionFn: func(ctx context.Context, req *tari_generated.CancelTransactionRequest) (*tari_generated.CancelTransactionResponse, error) {
@@ -613,8 +617,8 @@ func TestCancelTransaction_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CancelTransaction returned unexpected error: %v", err)
 	}
-	if gotReq == nil {
-		t.Fatal("server did not receive a request")
+	if !proto.Equal(gotReq, wantReq) {
+		t.Fatalf("CancelTransaction request = %+v, want %+v", gotReq, wantReq)
 	}
 	if !proto.Equal(gotResp, wantResp) {
 		t.Fatalf("CancelTransaction response = %+v, want %+v", gotResp, wantResp)
@@ -645,8 +649,8 @@ func TestCancelTransaction_Error(t *testing.T) {
 // TestSendShaAtomicSwapTransaction_Success verifies that SendShaAtomicSwapTransaction forwards the request as-is and returns the response
 // the server sends (arg marshaling + response passthrough).
 func TestSendShaAtomicSwapTransaction_Success(t *testing.T) {
-	wantReq := &tari_generated.SendShaAtomicSwapRequest{}
-	wantResp := &tari_generated.SendShaAtomicSwapResponse{}
+	wantReq := distinct(&tari_generated.SendShaAtomicSwapRequest{}, 1015)
+	wantResp := distinct(&tari_generated.SendShaAtomicSwapResponse{}, 1016)
 	var gotReq *tari_generated.SendShaAtomicSwapRequest
 	srv := &fakeWalletServer{
 		sendShaAtomicSwapTransactionFn: func(ctx context.Context, req *tari_generated.SendShaAtomicSwapRequest) (*tari_generated.SendShaAtomicSwapResponse, error) {
@@ -662,8 +666,8 @@ func TestSendShaAtomicSwapTransaction_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("SendShaAtomicSwapTransaction returned unexpected error: %v", err)
 	}
-	if gotReq == nil {
-		t.Fatal("server did not receive a request")
+	if !proto.Equal(gotReq, wantReq) {
+		t.Fatalf("SendShaAtomicSwapTransaction request = %+v, want %+v", gotReq, wantReq)
 	}
 	if !proto.Equal(gotResp, wantResp) {
 		t.Fatalf("SendShaAtomicSwapTransaction response = %+v, want %+v", gotResp, wantResp)
@@ -694,8 +698,8 @@ func TestSendShaAtomicSwapTransaction_Error(t *testing.T) {
 // TestCreateBurnTransaction_Success verifies that CreateBurnTransaction forwards the request as-is and returns the response
 // the server sends (arg marshaling + response passthrough).
 func TestCreateBurnTransaction_Success(t *testing.T) {
-	wantReq := &tari_generated.CreateBurnTransactionRequest{}
-	wantResp := &tari_generated.CreateBurnTransactionResponse{}
+	wantReq := distinct(&tari_generated.CreateBurnTransactionRequest{}, 1017)
+	wantResp := distinct(&tari_generated.CreateBurnTransactionResponse{}, 1018)
 	var gotReq *tari_generated.CreateBurnTransactionRequest
 	srv := &fakeWalletServer{
 		createBurnTransactionFn: func(ctx context.Context, req *tari_generated.CreateBurnTransactionRequest) (*tari_generated.CreateBurnTransactionResponse, error) {
@@ -711,8 +715,8 @@ func TestCreateBurnTransaction_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CreateBurnTransaction returned unexpected error: %v", err)
 	}
-	if gotReq == nil {
-		t.Fatal("server did not receive a request")
+	if !proto.Equal(gotReq, wantReq) {
+		t.Fatalf("CreateBurnTransaction request = %+v, want %+v", gotReq, wantReq)
 	}
 	if !proto.Equal(gotResp, wantResp) {
 		t.Fatalf("CreateBurnTransaction response = %+v, want %+v", gotResp, wantResp)
@@ -743,8 +747,8 @@ func TestCreateBurnTransaction_Error(t *testing.T) {
 // TestClaimShaAtomicSwapTransaction_Success verifies that ClaimShaAtomicSwapTransaction forwards the request as-is and returns the response
 // the server sends (arg marshaling + response passthrough).
 func TestClaimShaAtomicSwapTransaction_Success(t *testing.T) {
-	wantReq := &tari_generated.ClaimShaAtomicSwapRequest{}
-	wantResp := &tari_generated.ClaimShaAtomicSwapResponse{}
+	wantReq := distinct(&tari_generated.ClaimShaAtomicSwapRequest{}, 1019)
+	wantResp := distinct(&tari_generated.ClaimShaAtomicSwapResponse{}, 1020)
 	var gotReq *tari_generated.ClaimShaAtomicSwapRequest
 	srv := &fakeWalletServer{
 		claimShaAtomicSwapTransactionFn: func(ctx context.Context, req *tari_generated.ClaimShaAtomicSwapRequest) (*tari_generated.ClaimShaAtomicSwapResponse, error) {
@@ -760,8 +764,8 @@ func TestClaimShaAtomicSwapTransaction_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ClaimShaAtomicSwapTransaction returned unexpected error: %v", err)
 	}
-	if gotReq == nil {
-		t.Fatal("server did not receive a request")
+	if !proto.Equal(gotReq, wantReq) {
+		t.Fatalf("ClaimShaAtomicSwapTransaction request = %+v, want %+v", gotReq, wantReq)
 	}
 	if !proto.Equal(gotResp, wantResp) {
 		t.Fatalf("ClaimShaAtomicSwapTransaction response = %+v, want %+v", gotResp, wantResp)
@@ -792,8 +796,8 @@ func TestClaimShaAtomicSwapTransaction_Error(t *testing.T) {
 // TestClaimHtlcRefundTransaction_Success verifies that ClaimHtlcRefundTransaction forwards the request as-is and returns the response
 // the server sends (arg marshaling + response passthrough).
 func TestClaimHtlcRefundTransaction_Success(t *testing.T) {
-	wantReq := &tari_generated.ClaimHtlcRefundRequest{}
-	wantResp := &tari_generated.ClaimHtlcRefundResponse{}
+	wantReq := distinct(&tari_generated.ClaimHtlcRefundRequest{}, 1021)
+	wantResp := distinct(&tari_generated.ClaimHtlcRefundResponse{}, 1022)
 	var gotReq *tari_generated.ClaimHtlcRefundRequest
 	srv := &fakeWalletServer{
 		claimHtlcRefundTransactionFn: func(ctx context.Context, req *tari_generated.ClaimHtlcRefundRequest) (*tari_generated.ClaimHtlcRefundResponse, error) {
@@ -809,8 +813,8 @@ func TestClaimHtlcRefundTransaction_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ClaimHtlcRefundTransaction returned unexpected error: %v", err)
 	}
-	if gotReq == nil {
-		t.Fatal("server did not receive a request")
+	if !proto.Equal(gotReq, wantReq) {
+		t.Fatalf("ClaimHtlcRefundTransaction request = %+v, want %+v", gotReq, wantReq)
 	}
 	if !proto.Equal(gotResp, wantResp) {
 		t.Fatalf("ClaimHtlcRefundTransaction response = %+v, want %+v", gotResp, wantResp)
@@ -841,8 +845,8 @@ func TestClaimHtlcRefundTransaction_Error(t *testing.T) {
 // TestCreateTemplateRegistration_Success verifies that CreateTemplateRegistration forwards the request as-is and returns the response
 // the server sends (arg marshaling + response passthrough).
 func TestCreateTemplateRegistration_Success(t *testing.T) {
-	wantReq := &tari_generated.CreateTemplateRegistrationRequest{}
-	wantResp := &tari_generated.CreateTemplateRegistrationResponse{}
+	wantReq := distinct(&tari_generated.CreateTemplateRegistrationRequest{}, 1023)
+	wantResp := distinct(&tari_generated.CreateTemplateRegistrationResponse{}, 1024)
 	var gotReq *tari_generated.CreateTemplateRegistrationRequest
 	srv := &fakeWalletServer{
 		createTemplateRegistrationFn: func(ctx context.Context, req *tari_generated.CreateTemplateRegistrationRequest) (*tari_generated.CreateTemplateRegistrationResponse, error) {
@@ -858,8 +862,8 @@ func TestCreateTemplateRegistration_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CreateTemplateRegistration returned unexpected error: %v", err)
 	}
-	if gotReq == nil {
-		t.Fatal("server did not receive a request")
+	if !proto.Equal(gotReq, wantReq) {
+		t.Fatalf("CreateTemplateRegistration request = %+v, want %+v", gotReq, wantReq)
 	}
 	if !proto.Equal(gotResp, wantResp) {
 		t.Fatalf("CreateTemplateRegistration response = %+v, want %+v", gotResp, wantResp)
@@ -890,8 +894,8 @@ func TestCreateTemplateRegistration_Error(t *testing.T) {
 // TestSignMessage_Success verifies that SignMessage forwards the request as-is and returns the response
 // the server sends (arg marshaling + response passthrough).
 func TestSignMessage_Success(t *testing.T) {
-	wantReq := &tari_generated.SignMessageRequest{}
-	wantResp := &tari_generated.SignMessageResponse{}
+	wantReq := distinct(&tari_generated.SignMessageRequest{}, 1025)
+	wantResp := distinct(&tari_generated.SignMessageResponse{}, 1026)
 	var gotReq *tari_generated.SignMessageRequest
 	srv := &fakeWalletServer{
 		signMessageFn: func(ctx context.Context, req *tari_generated.SignMessageRequest) (*tari_generated.SignMessageResponse, error) {
@@ -907,8 +911,8 @@ func TestSignMessage_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("SignMessage returned unexpected error: %v", err)
 	}
-	if gotReq == nil {
-		t.Fatal("server did not receive a request")
+	if !proto.Equal(gotReq, wantReq) {
+		t.Fatalf("SignMessage request = %+v, want %+v", gotReq, wantReq)
 	}
 	if !proto.Equal(gotResp, wantResp) {
 		t.Fatalf("SignMessage response = %+v, want %+v", gotResp, wantResp)
@@ -939,8 +943,8 @@ func TestSignMessage_Error(t *testing.T) {
 // TestImportTransactions_Success verifies that ImportTransactions forwards the request as-is and returns the response
 // the server sends (arg marshaling + response passthrough).
 func TestImportTransactions_Success(t *testing.T) {
-	wantReq := &tari_generated.ImportTransactionsRequest{}
-	wantResp := &tari_generated.ImportTransactionsResponse{}
+	wantReq := distinct(&tari_generated.ImportTransactionsRequest{}, 1027)
+	wantResp := distinct(&tari_generated.ImportTransactionsResponse{}, 1028)
 	var gotReq *tari_generated.ImportTransactionsRequest
 	srv := &fakeWalletServer{
 		importTransactionsFn: func(ctx context.Context, req *tari_generated.ImportTransactionsRequest) (*tari_generated.ImportTransactionsResponse, error) {
@@ -956,8 +960,8 @@ func TestImportTransactions_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ImportTransactions returned unexpected error: %v", err)
 	}
-	if gotReq == nil {
-		t.Fatal("server did not receive a request")
+	if !proto.Equal(gotReq, wantReq) {
+		t.Fatalf("ImportTransactions request = %+v, want %+v", gotReq, wantReq)
 	}
 	if !proto.Equal(gotResp, wantResp) {
 		t.Fatalf("ImportTransactions response = %+v, want %+v", gotResp, wantResp)
@@ -988,8 +992,8 @@ func TestImportTransactions_Error(t *testing.T) {
 // TestGetAllCompletedTransactions_Success verifies that GetAllCompletedTransactions forwards the request as-is and returns the response
 // the server sends (arg marshaling + response passthrough).
 func TestGetAllCompletedTransactions_Success(t *testing.T) {
-	wantReq := &tari_generated.GetAllCompletedTransactionsRequest{}
-	wantResp := &tari_generated.GetAllCompletedTransactionsResponse{}
+	wantReq := distinct(&tari_generated.GetAllCompletedTransactionsRequest{}, 1029)
+	wantResp := distinct(&tari_generated.GetAllCompletedTransactionsResponse{}, 1030)
 	var gotReq *tari_generated.GetAllCompletedTransactionsRequest
 	srv := &fakeWalletServer{
 		getAllCompletedTransactionsFn: func(ctx context.Context, req *tari_generated.GetAllCompletedTransactionsRequest) (*tari_generated.GetAllCompletedTransactionsResponse, error) {
@@ -1005,8 +1009,8 @@ func TestGetAllCompletedTransactions_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetAllCompletedTransactions returned unexpected error: %v", err)
 	}
-	if gotReq == nil {
-		t.Fatal("server did not receive a request")
+	if !proto.Equal(gotReq, wantReq) {
+		t.Fatalf("GetAllCompletedTransactions request = %+v, want %+v", gotReq, wantReq)
 	}
 	if !proto.Equal(gotResp, wantResp) {
 		t.Fatalf("GetAllCompletedTransactions response = %+v, want %+v", gotResp, wantResp)
@@ -1037,8 +1041,8 @@ func TestGetAllCompletedTransactions_Error(t *testing.T) {
 // TestGetPaymentByReference_Success verifies that GetPaymentByReference forwards the request as-is and returns the response
 // the server sends (arg marshaling + response passthrough).
 func TestGetPaymentByReference_Success(t *testing.T) {
-	wantReq := &tari_generated.GetPaymentByReferenceRequest{}
-	wantResp := &tari_generated.GetPaymentByReferenceResponse{}
+	wantReq := distinct(&tari_generated.GetPaymentByReferenceRequest{}, 1031)
+	wantResp := distinct(&tari_generated.GetPaymentByReferenceResponse{}, 1032)
 	var gotReq *tari_generated.GetPaymentByReferenceRequest
 	srv := &fakeWalletServer{
 		getPaymentByReferenceFn: func(ctx context.Context, req *tari_generated.GetPaymentByReferenceRequest) (*tari_generated.GetPaymentByReferenceResponse, error) {
@@ -1054,8 +1058,8 @@ func TestGetPaymentByReference_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetPaymentByReference returned unexpected error: %v", err)
 	}
-	if gotReq == nil {
-		t.Fatal("server did not receive a request")
+	if !proto.Equal(gotReq, wantReq) {
+		t.Fatalf("GetPaymentByReference request = %+v, want %+v", gotReq, wantReq)
 	}
 	if !proto.Equal(gotResp, wantResp) {
 		t.Fatalf("GetPaymentByReference response = %+v, want %+v", gotResp, wantResp)
@@ -1086,8 +1090,8 @@ func TestGetPaymentByReference_Error(t *testing.T) {
 // TestGetFeeEstimate_Success verifies that GetFeeEstimate forwards the request as-is and returns the response
 // the server sends (arg marshaling + response passthrough).
 func TestGetFeeEstimate_Success(t *testing.T) {
-	wantReq := &tari_generated.GetFeeEstimateRequest{}
-	wantResp := &tari_generated.GetFeeEstimateResponse{}
+	wantReq := distinct(&tari_generated.GetFeeEstimateRequest{}, 1033)
+	wantResp := distinct(&tari_generated.GetFeeEstimateResponse{}, 1034)
 	var gotReq *tari_generated.GetFeeEstimateRequest
 	srv := &fakeWalletServer{
 		getFeeEstimateFn: func(ctx context.Context, req *tari_generated.GetFeeEstimateRequest) (*tari_generated.GetFeeEstimateResponse, error) {
@@ -1103,8 +1107,8 @@ func TestGetFeeEstimate_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetFeeEstimate returned unexpected error: %v", err)
 	}
-	if gotReq == nil {
-		t.Fatal("server did not receive a request")
+	if !proto.Equal(gotReq, wantReq) {
+		t.Fatalf("GetFeeEstimate request = %+v, want %+v", gotReq, wantReq)
 	}
 	if !proto.Equal(gotResp, wantResp) {
 		t.Fatalf("GetFeeEstimate response = %+v, want %+v", gotResp, wantResp)
@@ -1135,8 +1139,8 @@ func TestGetFeeEstimate_Error(t *testing.T) {
 // TestGetFeePerGramStats_Success verifies that GetFeePerGramStats forwards the request as-is and returns the response
 // the server sends (arg marshaling + response passthrough).
 func TestGetFeePerGramStats_Success(t *testing.T) {
-	wantReq := &tari_generated.GetFeePerGramStatsRequest{}
-	wantResp := &tari_generated.GetFeePerGramStatsResponse{}
+	wantReq := distinct(&tari_generated.GetFeePerGramStatsRequest{}, 1035)
+	wantResp := distinct(&tari_generated.GetFeePerGramStatsResponse{}, 1036)
 	var gotReq *tari_generated.GetFeePerGramStatsRequest
 	srv := &fakeWalletServer{
 		getFeePerGramStatsFn: func(ctx context.Context, req *tari_generated.GetFeePerGramStatsRequest) (*tari_generated.GetFeePerGramStatsResponse, error) {
@@ -1152,8 +1156,8 @@ func TestGetFeePerGramStats_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetFeePerGramStats returned unexpected error: %v", err)
 	}
-	if gotReq == nil {
-		t.Fatal("server did not receive a request")
+	if !proto.Equal(gotReq, wantReq) {
+		t.Fatalf("GetFeePerGramStats request = %+v, want %+v", gotReq, wantReq)
 	}
 	if !proto.Equal(gotResp, wantResp) {
 		t.Fatalf("GetFeePerGramStats response = %+v, want %+v", gotResp, wantResp)
@@ -1184,8 +1188,8 @@ func TestGetFeePerGramStats_Error(t *testing.T) {
 // TestReplaceByFee_Success verifies that ReplaceByFee forwards the request as-is and returns the response
 // the server sends (arg marshaling + response passthrough).
 func TestReplaceByFee_Success(t *testing.T) {
-	wantReq := &tari_generated.ReplaceByFeeRequest{}
-	wantResp := &tari_generated.ReplaceByFeeResponse{}
+	wantReq := distinct(&tari_generated.ReplaceByFeeRequest{}, 1037)
+	wantResp := distinct(&tari_generated.ReplaceByFeeResponse{}, 1038)
 	var gotReq *tari_generated.ReplaceByFeeRequest
 	srv := &fakeWalletServer{
 		replaceByFeeFn: func(ctx context.Context, req *tari_generated.ReplaceByFeeRequest) (*tari_generated.ReplaceByFeeResponse, error) {
@@ -1201,8 +1205,8 @@ func TestReplaceByFee_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ReplaceByFee returned unexpected error: %v", err)
 	}
-	if gotReq == nil {
-		t.Fatal("server did not receive a request")
+	if !proto.Equal(gotReq, wantReq) {
+		t.Fatalf("ReplaceByFee request = %+v, want %+v", gotReq, wantReq)
 	}
 	if !proto.Equal(gotResp, wantResp) {
 		t.Fatalf("ReplaceByFee response = %+v, want %+v", gotResp, wantResp)
@@ -1233,8 +1237,8 @@ func TestReplaceByFee_Error(t *testing.T) {
 // TestUserPayForFee_Success verifies that UserPayForFee forwards the request as-is and returns the response
 // the server sends (arg marshaling + response passthrough).
 func TestUserPayForFee_Success(t *testing.T) {
-	wantReq := &tari_generated.UserPayForFeeRequest{}
-	wantResp := &tari_generated.UserPayForFeeResponse{}
+	wantReq := distinct(&tari_generated.UserPayForFeeRequest{}, 1039)
+	wantResp := distinct(&tari_generated.UserPayForFeeResponse{}, 1040)
 	var gotReq *tari_generated.UserPayForFeeRequest
 	srv := &fakeWalletServer{
 		userPayForFeeFn: func(ctx context.Context, req *tari_generated.UserPayForFeeRequest) (*tari_generated.UserPayForFeeResponse, error) {
@@ -1250,8 +1254,8 @@ func TestUserPayForFee_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UserPayForFee returned unexpected error: %v", err)
 	}
-	if gotReq == nil {
-		t.Fatal("server did not receive a request")
+	if !proto.Equal(gotReq, wantReq) {
+		t.Fatalf("UserPayForFee request = %+v, want %+v", gotReq, wantReq)
 	}
 	if !proto.Equal(gotResp, wantResp) {
 		t.Fatalf("UserPayForFee response = %+v, want %+v", gotResp, wantResp)
@@ -1282,8 +1286,8 @@ func TestUserPayForFee_Error(t *testing.T) {
 // TestRegisterValidatorNode_Success verifies that RegisterValidatorNode forwards the request as-is and returns the response
 // the server sends (arg marshaling + response passthrough).
 func TestRegisterValidatorNode_Success(t *testing.T) {
-	wantReq := &tari_generated.RegisterValidatorNodeRequest{}
-	wantResp := &tari_generated.RegisterValidatorNodeResponse{}
+	wantReq := distinct(&tari_generated.RegisterValidatorNodeRequest{}, 1041)
+	wantResp := distinct(&tari_generated.RegisterValidatorNodeResponse{}, 1042)
 	var gotReq *tari_generated.RegisterValidatorNodeRequest
 	srv := &fakeWalletServer{
 		registerValidatorNodeFn: func(ctx context.Context, req *tari_generated.RegisterValidatorNodeRequest) (*tari_generated.RegisterValidatorNodeResponse, error) {
@@ -1299,8 +1303,8 @@ func TestRegisterValidatorNode_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("RegisterValidatorNode returned unexpected error: %v", err)
 	}
-	if gotReq == nil {
-		t.Fatal("server did not receive a request")
+	if !proto.Equal(gotReq, wantReq) {
+		t.Fatalf("RegisterValidatorNode request = %+v, want %+v", gotReq, wantReq)
 	}
 	if !proto.Equal(gotResp, wantResp) {
 		t.Fatalf("RegisterValidatorNode response = %+v, want %+v", gotResp, wantResp)
@@ -1331,8 +1335,8 @@ func TestRegisterValidatorNode_Error(t *testing.T) {
 // TestSubmitValidatorEvictionProof_Success verifies that SubmitValidatorEvictionProof forwards the request as-is and returns the response
 // the server sends (arg marshaling + response passthrough).
 func TestSubmitValidatorEvictionProof_Success(t *testing.T) {
-	wantReq := &tari_generated.SubmitValidatorEvictionProofRequest{}
-	wantResp := &tari_generated.SubmitValidatorEvictionProofResponse{}
+	wantReq := distinct(&tari_generated.SubmitValidatorEvictionProofRequest{}, 1043)
+	wantResp := distinct(&tari_generated.SubmitValidatorEvictionProofResponse{}, 1044)
 	var gotReq *tari_generated.SubmitValidatorEvictionProofRequest
 	srv := &fakeWalletServer{
 		submitValidatorEvictionProofFn: func(ctx context.Context, req *tari_generated.SubmitValidatorEvictionProofRequest) (*tari_generated.SubmitValidatorEvictionProofResponse, error) {
@@ -1348,8 +1352,8 @@ func TestSubmitValidatorEvictionProof_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("SubmitValidatorEvictionProof returned unexpected error: %v", err)
 	}
-	if gotReq == nil {
-		t.Fatal("server did not receive a request")
+	if !proto.Equal(gotReq, wantReq) {
+		t.Fatalf("SubmitValidatorEvictionProof request = %+v, want %+v", gotReq, wantReq)
 	}
 	if !proto.Equal(gotResp, wantResp) {
 		t.Fatalf("SubmitValidatorEvictionProof response = %+v, want %+v", gotResp, wantResp)
@@ -1380,8 +1384,8 @@ func TestSubmitValidatorEvictionProof_Error(t *testing.T) {
 // TestSubmitValidatorNodeExit_Success verifies that SubmitValidatorNodeExit forwards the request as-is and returns the response
 // the server sends (arg marshaling + response passthrough).
 func TestSubmitValidatorNodeExit_Success(t *testing.T) {
-	wantReq := &tari_generated.SubmitValidatorNodeExitRequest{}
-	wantResp := &tari_generated.SubmitValidatorNodeExitResponse{}
+	wantReq := distinct(&tari_generated.SubmitValidatorNodeExitRequest{}, 1045)
+	wantResp := distinct(&tari_generated.SubmitValidatorNodeExitResponse{}, 1046)
 	var gotReq *tari_generated.SubmitValidatorNodeExitRequest
 	srv := &fakeWalletServer{
 		submitValidatorNodeExitFn: func(ctx context.Context, req *tari_generated.SubmitValidatorNodeExitRequest) (*tari_generated.SubmitValidatorNodeExitResponse, error) {
@@ -1397,8 +1401,8 @@ func TestSubmitValidatorNodeExit_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("SubmitValidatorNodeExit returned unexpected error: %v", err)
 	}
-	if gotReq == nil {
-		t.Fatal("server did not receive a request")
+	if !proto.Equal(gotReq, wantReq) {
+		t.Fatalf("SubmitValidatorNodeExit request = %+v, want %+v", gotReq, wantReq)
 	}
 	if !proto.Equal(gotResp, wantResp) {
 		t.Fatalf("SubmitValidatorNodeExit response = %+v, want %+v", gotResp, wantResp)
@@ -1426,13 +1430,18 @@ func TestSubmitValidatorNodeExit_Error(t *testing.T) {
 	}
 }
 
-// TestStreamTransactionEvents_DrainsStream verifies that StreamTransactionEvents forwards the request as-is and drains every
-// item the server streams back into a slice, in order.
-func TestStreamTransactionEvents_DrainsStream(t *testing.T) {
+// TestStreamTransactionEvents_InvokesCallbackPerEvent verifies the reshaped StreamTransactionEvents
+// (production-readiness finding 2): it must deliver events to onEvent as they arrive, including
+// against a server that behaves like the real, genuinely continuous RPC — i.e. one that does NOT
+// close the stream on its own after a fixed number of items, but instead blocks until the client
+// cancels. A drain-to-slice implementation would hang forever against this fake; the
+// callback-based implementation must return once the context is cancelled after the expected
+// events have all been observed.
+func TestStreamTransactionEvents_InvokesCallbackPerEvent(t *testing.T) {
 	want := []*tari_generated.TransactionEventResponse{
-		{},
-		{},
-		{},
+		distinct(&tari_generated.TransactionEventResponse{}, 101),
+		distinct(&tari_generated.TransactionEventResponse{}, 102),
+		distinct(&tari_generated.TransactionEventResponse{}, 103),
 	}
 	var gotReq *tari_generated.TransactionEventRequest
 	srv := &fakeWalletServer{
@@ -1443,56 +1452,136 @@ func TestStreamTransactionEvents_DrainsStream(t *testing.T) {
 					return err
 				}
 			}
-			return nil
+			// A real StreamTransactionEvents server never sends io.EOF on its own; simulate that
+			// here by blocking until the client cancels instead of returning.
+			<-stream.Context().Done()
+			return stream.Context().Err()
 		},
 	}
 	addr := startFakeWalletServer(t, srv)
 	if err := InitWalletGRPC(addr); err != nil {
 		t.Fatalf("InitWalletGRPC: %v", err)
 	}
-	got, err := StreamTransactionEvents(context.Background(), &tari_generated.TransactionEventRequest{})
-	if err != nil {
-		t.Fatalf("StreamTransactionEvents returned unexpected error: %v", err)
+	wantReq := distinct(&tari_generated.TransactionEventRequest{}, 100)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	var mu sync.Mutex
+	var got []*tari_generated.TransactionEventResponse
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		_ = StreamTransactionEvents(ctx, wantReq, func(ev *tari_generated.TransactionEventResponse) error {
+			mu.Lock()
+			got = append(got, ev)
+			n := len(got)
+			mu.Unlock()
+			if n == len(want) {
+				cancel()
+			}
+			return nil
+		})
+	}()
+
+	select {
+	case <-done:
+	case <-time.After(5 * time.Second):
+		t.Fatal("StreamTransactionEvents did not return after ctx cancellation")
 	}
+
 	if gotReq == nil {
 		t.Fatal("server did not receive a request")
 	}
+	if !proto.Equal(gotReq, wantReq) {
+		t.Fatalf("StreamTransactionEvents request = %+v, want %+v", gotReq, wantReq)
+	}
+
+	mu.Lock()
+	defer mu.Unlock()
 	if len(got) != len(want) {
-		t.Fatalf("StreamTransactionEvents returned %d items, want %d", len(got), len(want))
+		t.Fatalf("onEvent invoked %d times, want %d", len(got), len(want))
 	}
 	for i := range want {
 		if !proto.Equal(got[i], want[i]) {
-			t.Fatalf("StreamTransactionEvents item %d = %+v, want %+v", i, got[i], want[i])
+			t.Fatalf("event %d = %+v, want %+v", i, got[i], want[i])
 		}
 	}
 }
 
-// TestStreamTransactionEvents_PropagatesMidStreamError verifies that when the server errors out partway through the
-// stream, StreamTransactionEvents propagates that error and discards any items already received (mirroring the existing
-// GetTransactionsInBlock/GetBlockByHeight streaming wrappers' behavior).
-func TestStreamTransactionEvents_PropagatesMidStreamError(t *testing.T) {
-	wantErr := status.Error(codes.Internal, "boom-streamtransactionevents-stream")
+// TestStreamTransactionEvents_CallbackErrorStopsStream verifies that when onEvent returns an
+// error, StreamTransactionEvents returns that error immediately and stops invoking onEvent for
+// any further events, even though the (simulated real, continuous) server keeps streaming.
+func TestStreamTransactionEvents_CallbackErrorStopsStream(t *testing.T) {
+	wantErr := errors.New("callback-stop")
 	srv := &fakeWalletServer{
 		streamTransactionEventsFn: func(req *tari_generated.TransactionEventRequest, stream tari_generated.Wallet_StreamTransactionEventsServer) error {
-			if err := stream.Send(&tari_generated.TransactionEventResponse{}); err != nil {
-				return err
+			for i := 0; i < 10; i++ {
+				if err := stream.Send(&tari_generated.TransactionEventResponse{}); err != nil {
+					return err
+				}
 			}
-			return wantErr
+			<-stream.Context().Done()
+			return stream.Context().Err()
 		},
 	}
 	addr := startFakeWalletServer(t, srv)
 	if err := InitWalletGRPC(addr); err != nil {
 		t.Fatalf("InitWalletGRPC: %v", err)
 	}
-	got, err := StreamTransactionEvents(context.Background(), &tari_generated.TransactionEventRequest{})
-	if err == nil {
-		t.Fatal("expected an error, got nil")
+
+	var calls int
+	err := StreamTransactionEvents(context.Background(), &tari_generated.TransactionEventRequest{}, func(*tari_generated.TransactionEventResponse) error {
+		calls++
+		if calls == 1 {
+			return wantErr
+		}
+		return nil
+	})
+	if !errors.Is(err, wantErr) {
+		t.Fatalf("expected the callback's error to propagate, got %v", err)
 	}
-	if got != nil {
-		t.Fatalf("expected a nil result on mid-stream error, got %+v", got)
+	if calls != 1 {
+		t.Fatalf("expected exactly 1 onEvent invocation before the callback error stopped the stream, got %d", calls)
 	}
-	if status.Convert(err).Message() != "boom-streamtransactionevents-stream" {
-		t.Fatalf("StreamTransactionEvents did not propagate the underlying error, got: %v", err)
+}
+
+// TestStreamTransactionEvents_ContextCancelReturns verifies that StreamTransactionEvents returns
+// promptly (rather than hanging indefinitely) when ctx is cancelled while the server is a
+// genuinely continuous stream that never sends io.EOF on its own — the exact scenario finding 2
+// identified the previous drain-to-slice implementation as unable to handle.
+func TestStreamTransactionEvents_ContextCancelReturns(t *testing.T) {
+	srv := &fakeWalletServer{
+		streamTransactionEventsFn: func(req *tari_generated.TransactionEventRequest, stream tari_generated.Wallet_StreamTransactionEventsServer) error {
+			<-stream.Context().Done()
+			return stream.Context().Err()
+		},
+	}
+	addr := startFakeWalletServer(t, srv)
+	if err := InitWalletGRPC(addr); err != nil {
+		t.Fatalf("InitWalletGRPC: %v", err)
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan error, 1)
+	go func() {
+		done <- StreamTransactionEvents(ctx, &tari_generated.TransactionEventRequest{}, func(*tari_generated.TransactionEventResponse) error {
+			return nil
+		})
+	}()
+
+	// Give the stream a moment to actually establish before cancelling, then confirm
+	// StreamTransactionEvents returns promptly instead of hanging.
+	time.Sleep(50 * time.Millisecond)
+	cancel()
+
+	select {
+	case err := <-done:
+		if err == nil {
+			t.Fatal("expected an error after ctx cancellation, got nil")
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("StreamTransactionEvents did not return after ctx cancellation")
 	}
 }
 
@@ -1500,9 +1589,9 @@ func TestStreamTransactionEvents_PropagatesMidStreamError(t *testing.T) {
 // item the server streams back into a slice, in order.
 func TestGetAllCompletedTransactionsStream_DrainsStream(t *testing.T) {
 	want := []*tari_generated.GetCompletedTransactionsResponse{
-		{},
-		{},
-		{},
+		distinct(&tari_generated.GetCompletedTransactionsResponse{}, 1056),
+		distinct(&tari_generated.GetCompletedTransactionsResponse{}, 1057),
+		distinct(&tari_generated.GetCompletedTransactionsResponse{}, 1058),
 	}
 	var gotReq *tari_generated.GetAllCompletedTransactionsRequest
 	srv := &fakeWalletServer{
@@ -1520,12 +1609,13 @@ func TestGetAllCompletedTransactionsStream_DrainsStream(t *testing.T) {
 	if err := InitWalletGRPC(addr); err != nil {
 		t.Fatalf("InitWalletGRPC: %v", err)
 	}
-	got, err := GetAllCompletedTransactionsStream(context.Background(), &tari_generated.GetAllCompletedTransactionsRequest{})
+	wantReq := distinct(&tari_generated.GetAllCompletedTransactionsRequest{}, 1059)
+	got, err := GetAllCompletedTransactionsStream(context.Background(), wantReq)
 	if err != nil {
 		t.Fatalf("GetAllCompletedTransactionsStream returned unexpected error: %v", err)
 	}
-	if gotReq == nil {
-		t.Fatal("server did not receive a request")
+	if !proto.Equal(gotReq, wantReq) {
+		t.Fatalf("GetAllCompletedTransactionsStream request = %+v, want %+v", gotReq, wantReq)
 	}
 	if len(got) != len(want) {
 		t.Fatalf("GetAllCompletedTransactionsStream returned %d items, want %d", len(got), len(want))
