@@ -4,11 +4,12 @@ import (
 	"flag"
 	"fmt"
 	"github.com/Snipa22/go-tari-grpc-lib/v3/walletGRPC"
+	"log"
 	"net/http"
 )
 
 func rootCall(w http.ResponseWriter, req *http.Request) {
-	balances, err := walletGRPC.GetBalances()
+	balances, err := walletGRPC.GetBalances(req.Context())
 	if err != nil {
 		fmt.Fprintf(w, `{"error": "%v"}`, err)
 		return
@@ -20,7 +21,9 @@ func rootCall(w http.ResponseWriter, req *http.Request) {
 func main() {
 	walletGRPCAddressPtr := flag.String("wallet-grpc-address", "127.0.0.1:18143", "Tari wallet GRPC address")
 	flag.Parse()
-	walletGRPC.InitWalletGRPC(*walletGRPCAddressPtr)
+	if err := walletGRPC.InitWalletGRPC(*walletGRPCAddressPtr); err != nil {
+		log.Fatal(err)
+	}
 	http.HandleFunc("/", rootCall)
 	http.ListenAndServe("127.0.0.1:2049", nil)
 }

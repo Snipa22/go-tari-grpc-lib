@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
@@ -41,8 +42,11 @@ func main() {
 	depthPtr := flag.Int("depth", 100, "an int")
 	nodeGRPCPtr := flag.String("base-node-grpc-address", "node-pool.tari.jagtech.io:18102", "Address for the base-node, defaults to Impala's public pool")
 	flag.Parse()
-	nodeGRPC.InitNodeGRPC(*nodeGRPCPtr)
-	tipData, err := nodeGRPC.GetTipInfo()
+	ctx := context.Background()
+	if err := nodeGRPC.InitNodeGRPC(*nodeGRPCPtr); err != nil {
+		log.Fatal(err)
+	}
+	tipData, err := nodeGRPC.GetTipInfo(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -56,7 +60,7 @@ func main() {
 
 	results := make(map[string][]uint64)
 	for {
-		blocks, err := nodeGRPC.GetBlockByHeight(makeRange(start, end))
+		blocks, err := nodeGRPC.GetBlockByHeight(ctx, makeRange(start, end))
 		if err != nil {
 			log.Fatal(err)
 		}

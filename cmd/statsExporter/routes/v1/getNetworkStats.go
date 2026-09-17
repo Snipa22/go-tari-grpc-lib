@@ -26,7 +26,7 @@ func GetNetworkStats(c *gin.Context) {
 		BestBlockHash:   fmt.Sprintf("%x", tipData.Metadata.BestBlockHash),
 	}
 	// Get the root reward
-	if netState, _ := nodeGRPC.GetNetworkState(); netState != nil {
+	if netState, _ := nodeGRPC.GetNetworkState(c.Request.Context()); netState != nil {
 		returnStruct.CurBlockRootReward = netState.Reward
 	}
 	// Get chain diffs

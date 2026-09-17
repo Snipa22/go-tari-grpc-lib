@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"github.com/Snipa22/go-tari-grpc-lib/v3/walletGRPC"
@@ -11,9 +12,11 @@ func main() {
 	numSplits := flag.Int("num-splits", 400, "Number of splits to make, wallet must have amount-per-split * num-splits available, defaults to 500")
 	walletGRPCAddressPtr := flag.String("wallet-grpc-address", "127.0.0.1:18143", "Tari wallet GRPC address")
 	flag.Parse()
-	walletGRPC.InitWalletGRPC(*walletGRPCAddressPtr)
+	if err := walletGRPC.InitWalletGRPC(*walletGRPCAddressPtr); err != nil {
+		panic(err)
+	}
 	fmt.Println("Prepping split for a wallet to UTXO's")
-	resp, err := walletGRPC.SubmitCoinSplitRequest(*amtPerSplit, *numSplits)
+	resp, err := walletGRPC.SubmitCoinSplitRequest(context.Background(), *amtPerSplit, *numSplits, 0)
 	if err != nil {
 		panic(err)
 	}

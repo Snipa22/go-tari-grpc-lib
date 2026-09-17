@@ -34,8 +34,14 @@ func main() {
 	walletGRPCAddressPtr := flag.String("wallet-grpc-address", "127.0.0.1:18143", "Tari wallet GRPC address")
 	flag.Parse()
 
-	nodeGRPC.InitNodeGRPC(*nodeGRPCPtr)
-	walletGRPC.InitWalletGRPC(*walletGRPCAddressPtr)
+	if err := nodeGRPC.InitNodeGRPC(*nodeGRPCPtr); err != nil {
+		milieu.CaptureException(err)
+		milieu.Fatal(err.Error())
+	}
+	if err := walletGRPC.InitWalletGRPC(*walletGRPCAddressPtr); err != nil {
+		milieu.CaptureException(err)
+		milieu.Fatal(err.Error())
+	}
 
 	if *debugEnabledPtr {
 		milieu.SetLogLevel(logrus.DebugLevel)
