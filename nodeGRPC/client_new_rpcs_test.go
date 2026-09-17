@@ -13,8 +13,8 @@ import (
 // TestGetBlockTiming_Success verifies that GetBlockTiming forwards the request as-is and returns the response
 // the server sends (arg marshaling + response passthrough).
 func TestGetBlockTiming_Success(t *testing.T) {
-	wantReq := &tari_generated.HeightRequest{}
-	wantResp := &tari_generated.BlockTimingResponse{}
+	wantReq := distinct(&tari_generated.HeightRequest{}, 1001)
+	wantResp := distinct(&tari_generated.BlockTimingResponse{}, 1002)
 	var gotReq *tari_generated.HeightRequest
 	srv := &fakeBaseNodeServer{
 		getBlockTimingFn: func(ctx context.Context, req *tari_generated.HeightRequest) (*tari_generated.BlockTimingResponse, error) {
@@ -30,8 +30,8 @@ func TestGetBlockTiming_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetBlockTiming returned unexpected error: %v", err)
 	}
-	if gotReq == nil {
-		t.Fatal("server did not receive a request")
+	if !proto.Equal(gotReq, wantReq) {
+		t.Fatalf("GetBlockTiming request = %+v, want %+v", gotReq, wantReq)
 	}
 	if !proto.Equal(gotResp, wantResp) {
 		t.Fatalf("GetBlockTiming response = %+v, want %+v", gotResp, wantResp)
@@ -62,8 +62,8 @@ func TestGetBlockTiming_Error(t *testing.T) {
 // TestGetConstants_Success verifies that GetConstants forwards the request as-is and returns the response
 // the server sends (arg marshaling + response passthrough).
 func TestGetConstants_Success(t *testing.T) {
-	wantReq := &tari_generated.BlockHeight{}
-	wantResp := &tari_generated.ConsensusConstants{}
+	wantReq := distinct(&tari_generated.BlockHeight{}, 1003)
+	wantResp := distinct(&tari_generated.ConsensusConstants{}, 1004)
 	var gotReq *tari_generated.BlockHeight
 	srv := &fakeBaseNodeServer{
 		getConstantsFn: func(ctx context.Context, req *tari_generated.BlockHeight) (*tari_generated.ConsensusConstants, error) {
@@ -79,8 +79,8 @@ func TestGetConstants_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetConstants returned unexpected error: %v", err)
 	}
-	if gotReq == nil {
-		t.Fatal("server did not receive a request")
+	if !proto.Equal(gotReq, wantReq) {
+		t.Fatalf("GetConstants request = %+v, want %+v", gotReq, wantReq)
 	}
 	if !proto.Equal(gotResp, wantResp) {
 		t.Fatalf("GetConstants response = %+v, want %+v", gotResp, wantResp)
@@ -111,8 +111,8 @@ func TestGetConstants_Error(t *testing.T) {
 // TestGetBlockSize_Success verifies that GetBlockSize forwards the request as-is and returns the response
 // the server sends (arg marshaling + response passthrough).
 func TestGetBlockSize_Success(t *testing.T) {
-	wantReq := &tari_generated.BlockGroupRequest{}
-	wantResp := &tari_generated.BlockGroupResponse{}
+	wantReq := distinct(&tari_generated.BlockGroupRequest{}, 1005)
+	wantResp := distinct(&tari_generated.BlockGroupResponse{}, 1006)
 	var gotReq *tari_generated.BlockGroupRequest
 	srv := &fakeBaseNodeServer{
 		getBlockSizeFn: func(ctx context.Context, req *tari_generated.BlockGroupRequest) (*tari_generated.BlockGroupResponse, error) {
@@ -128,8 +128,8 @@ func TestGetBlockSize_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetBlockSize returned unexpected error: %v", err)
 	}
-	if gotReq == nil {
-		t.Fatal("server did not receive a request")
+	if !proto.Equal(gotReq, wantReq) {
+		t.Fatalf("GetBlockSize request = %+v, want %+v", gotReq, wantReq)
 	}
 	if !proto.Equal(gotResp, wantResp) {
 		t.Fatalf("GetBlockSize response = %+v, want %+v", gotResp, wantResp)
@@ -160,8 +160,8 @@ func TestGetBlockSize_Error(t *testing.T) {
 // TestGetBlockFees_Success verifies that GetBlockFees forwards the request as-is and returns the response
 // the server sends (arg marshaling + response passthrough).
 func TestGetBlockFees_Success(t *testing.T) {
-	wantReq := &tari_generated.BlockGroupRequest{}
-	wantResp := &tari_generated.BlockGroupResponse{}
+	wantReq := distinct(&tari_generated.BlockGroupRequest{}, 1007)
+	wantResp := distinct(&tari_generated.BlockGroupResponse{}, 1008)
 	var gotReq *tari_generated.BlockGroupRequest
 	srv := &fakeBaseNodeServer{
 		getBlockFeesFn: func(ctx context.Context, req *tari_generated.BlockGroupRequest) (*tari_generated.BlockGroupResponse, error) {
@@ -177,8 +177,8 @@ func TestGetBlockFees_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetBlockFees returned unexpected error: %v", err)
 	}
-	if gotReq == nil {
-		t.Fatal("server did not receive a request")
+	if !proto.Equal(gotReq, wantReq) {
+		t.Fatalf("GetBlockFees request = %+v, want %+v", gotReq, wantReq)
 	}
 	if !proto.Equal(gotResp, wantResp) {
 		t.Fatalf("GetBlockFees response = %+v, want %+v", gotResp, wantResp)
@@ -209,7 +209,7 @@ func TestGetBlockFees_Error(t *testing.T) {
 // TestGetVersion_Success verifies that GetVersion returns the response the server sends, and that
 // the server actually received a request (arg marshaling for the no-argument/Empty case).
 func TestGetVersion_Success(t *testing.T) {
-	wantResp := &tari_generated.BaseNodeGetVersionResponse{}
+	wantResp := distinct(&tari_generated.BaseNodeGetVersionResponse{}, 1021)
 	var gotReq *tari_generated.Empty
 	srv := &fakeBaseNodeServer{
 		getVersionFn: func(ctx context.Context, req *tari_generated.Empty) (*tari_generated.BaseNodeGetVersionResponse, error) {
@@ -257,7 +257,7 @@ func TestGetVersion_Error(t *testing.T) {
 // TestCheckForUpdates_Success verifies that CheckForUpdates returns the response the server sends, and that
 // the server actually received a request (arg marshaling for the no-argument/Empty case).
 func TestCheckForUpdates_Success(t *testing.T) {
-	wantResp := &tari_generated.SoftwareUpdate{}
+	wantResp := distinct(&tari_generated.SoftwareUpdate{}, 1022)
 	var gotReq *tari_generated.Empty
 	srv := &fakeBaseNodeServer{
 		checkForUpdatesFn: func(ctx context.Context, req *tari_generated.Empty) (*tari_generated.SoftwareUpdate, error) {
@@ -305,8 +305,8 @@ func TestCheckForUpdates_Error(t *testing.T) {
 // TestGetNewBlockBlob_Success verifies that GetNewBlockBlob forwards the request as-is and returns the response
 // the server sends (arg marshaling + response passthrough).
 func TestGetNewBlockBlob_Success(t *testing.T) {
-	wantReq := &tari_generated.NewBlockTemplate{}
-	wantResp := &tari_generated.GetNewBlockBlobResult{}
+	wantReq := distinct(&tari_generated.NewBlockTemplate{}, 1009)
+	wantResp := distinct(&tari_generated.GetNewBlockBlobResult{}, 1010)
 	var gotReq *tari_generated.NewBlockTemplate
 	srv := &fakeBaseNodeServer{
 		getNewBlockBlobFn: func(ctx context.Context, req *tari_generated.NewBlockTemplate) (*tari_generated.GetNewBlockBlobResult, error) {
@@ -322,8 +322,8 @@ func TestGetNewBlockBlob_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetNewBlockBlob returned unexpected error: %v", err)
 	}
-	if gotReq == nil {
-		t.Fatal("server did not receive a request")
+	if !proto.Equal(gotReq, wantReq) {
+		t.Fatalf("GetNewBlockBlob request = %+v, want %+v", gotReq, wantReq)
 	}
 	if !proto.Equal(gotResp, wantResp) {
 		t.Fatalf("GetNewBlockBlob response = %+v, want %+v", gotResp, wantResp)
@@ -354,8 +354,8 @@ func TestGetNewBlockBlob_Error(t *testing.T) {
 // TestSubmitBlockBlob_Success verifies that SubmitBlockBlob forwards the request as-is and returns the response
 // the server sends (arg marshaling + response passthrough).
 func TestSubmitBlockBlob_Success(t *testing.T) {
-	wantReq := &tari_generated.BlockBlobRequest{}
-	wantResp := &tari_generated.SubmitBlockResponse{}
+	wantReq := distinct(&tari_generated.BlockBlobRequest{}, 1011)
+	wantResp := distinct(&tari_generated.SubmitBlockResponse{}, 1012)
 	var gotReq *tari_generated.BlockBlobRequest
 	srv := &fakeBaseNodeServer{
 		submitBlockBlobFn: func(ctx context.Context, req *tari_generated.BlockBlobRequest) (*tari_generated.SubmitBlockResponse, error) {
@@ -371,8 +371,8 @@ func TestSubmitBlockBlob_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("SubmitBlockBlob returned unexpected error: %v", err)
 	}
-	if gotReq == nil {
-		t.Fatal("server did not receive a request")
+	if !proto.Equal(gotReq, wantReq) {
+		t.Fatalf("SubmitBlockBlob request = %+v, want %+v", gotReq, wantReq)
 	}
 	if !proto.Equal(gotResp, wantResp) {
 		t.Fatalf("SubmitBlockBlob response = %+v, want %+v", gotResp, wantResp)
@@ -403,8 +403,8 @@ func TestSubmitBlockBlob_Error(t *testing.T) {
 // TestSubmitTransaction_Success verifies that SubmitTransaction forwards the request as-is and returns the response
 // the server sends (arg marshaling + response passthrough).
 func TestSubmitTransaction_Success(t *testing.T) {
-	wantReq := &tari_generated.SubmitTransactionRequest{}
-	wantResp := &tari_generated.SubmitTransactionResponse{}
+	wantReq := distinct(&tari_generated.SubmitTransactionRequest{}, 1013)
+	wantResp := distinct(&tari_generated.SubmitTransactionResponse{}, 1014)
 	var gotReq *tari_generated.SubmitTransactionRequest
 	srv := &fakeBaseNodeServer{
 		submitTransactionFn: func(ctx context.Context, req *tari_generated.SubmitTransactionRequest) (*tari_generated.SubmitTransactionResponse, error) {
@@ -420,8 +420,8 @@ func TestSubmitTransaction_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("SubmitTransaction returned unexpected error: %v", err)
 	}
-	if gotReq == nil {
-		t.Fatal("server did not receive a request")
+	if !proto.Equal(gotReq, wantReq) {
+		t.Fatalf("SubmitTransaction request = %+v, want %+v", gotReq, wantReq)
 	}
 	if !proto.Equal(gotResp, wantResp) {
 		t.Fatalf("SubmitTransaction response = %+v, want %+v", gotResp, wantResp)
@@ -452,7 +452,7 @@ func TestSubmitTransaction_Error(t *testing.T) {
 // TestGetSyncInfo_Success verifies that GetSyncInfo returns the response the server sends, and that
 // the server actually received a request (arg marshaling for the no-argument/Empty case).
 func TestGetSyncInfo_Success(t *testing.T) {
-	wantResp := &tari_generated.SyncInfoResponse{}
+	wantResp := distinct(&tari_generated.SyncInfoResponse{}, 1023)
 	var gotReq *tari_generated.Empty
 	srv := &fakeBaseNodeServer{
 		getSyncInfoFn: func(ctx context.Context, req *tari_generated.Empty) (*tari_generated.SyncInfoResponse, error) {
@@ -500,7 +500,7 @@ func TestGetSyncInfo_Error(t *testing.T) {
 // TestGetSyncProgress_Success verifies that GetSyncProgress returns the response the server sends, and that
 // the server actually received a request (arg marshaling for the no-argument/Empty case).
 func TestGetSyncProgress_Success(t *testing.T) {
-	wantResp := &tari_generated.SyncProgressResponse{}
+	wantResp := distinct(&tari_generated.SyncProgressResponse{}, 1024)
 	var gotReq *tari_generated.Empty
 	srv := &fakeBaseNodeServer{
 		getSyncProgressFn: func(ctx context.Context, req *tari_generated.Empty) (*tari_generated.SyncProgressResponse, error) {
@@ -548,8 +548,8 @@ func TestGetSyncProgress_Error(t *testing.T) {
 // TestTransactionState_Success verifies that TransactionState forwards the request as-is and returns the response
 // the server sends (arg marshaling + response passthrough).
 func TestTransactionState_Success(t *testing.T) {
-	wantReq := &tari_generated.TransactionStateRequest{}
-	wantResp := &tari_generated.TransactionStateResponse{}
+	wantReq := distinct(&tari_generated.TransactionStateRequest{}, 1015)
+	wantResp := distinct(&tari_generated.TransactionStateResponse{}, 1016)
 	var gotReq *tari_generated.TransactionStateRequest
 	srv := &fakeBaseNodeServer{
 		transactionStateFn: func(ctx context.Context, req *tari_generated.TransactionStateRequest) (*tari_generated.TransactionStateResponse, error) {
@@ -565,8 +565,8 @@ func TestTransactionState_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("TransactionState returned unexpected error: %v", err)
 	}
-	if gotReq == nil {
-		t.Fatal("server did not receive a request")
+	if !proto.Equal(gotReq, wantReq) {
+		t.Fatalf("TransactionState request = %+v, want %+v", gotReq, wantReq)
 	}
 	if !proto.Equal(gotResp, wantResp) {
 		t.Fatalf("TransactionState response = %+v, want %+v", gotResp, wantResp)
@@ -597,7 +597,7 @@ func TestTransactionState_Error(t *testing.T) {
 // TestGetNetworkStatus_Success verifies that GetNetworkStatus returns the response the server sends, and that
 // the server actually received a request (arg marshaling for the no-argument/Empty case).
 func TestGetNetworkStatus_Success(t *testing.T) {
-	wantResp := &tari_generated.NetworkStatusResponse{}
+	wantResp := distinct(&tari_generated.NetworkStatusResponse{}, 1025)
 	var gotReq *tari_generated.Empty
 	srv := &fakeBaseNodeServer{
 		getNetworkStatusFn: func(ctx context.Context, req *tari_generated.Empty) (*tari_generated.NetworkStatusResponse, error) {
@@ -645,7 +645,7 @@ func TestGetNetworkStatus_Error(t *testing.T) {
 // TestListConnectedPeers_Success verifies that ListConnectedPeers returns the response the server sends, and that
 // the server actually received a request (arg marshaling for the no-argument/Empty case).
 func TestListConnectedPeers_Success(t *testing.T) {
-	wantResp := &tari_generated.ListConnectedPeersResponse{}
+	wantResp := distinct(&tari_generated.ListConnectedPeersResponse{}, 1026)
 	var gotReq *tari_generated.Empty
 	srv := &fakeBaseNodeServer{
 		listConnectedPeersFn: func(ctx context.Context, req *tari_generated.Empty) (*tari_generated.ListConnectedPeersResponse, error) {
@@ -693,7 +693,7 @@ func TestListConnectedPeers_Error(t *testing.T) {
 // TestGetMempoolStats_Success verifies that GetMempoolStats returns the response the server sends, and that
 // the server actually received a request (arg marshaling for the no-argument/Empty case).
 func TestGetMempoolStats_Success(t *testing.T) {
-	wantResp := &tari_generated.MempoolStatsResponse{}
+	wantResp := distinct(&tari_generated.MempoolStatsResponse{}, 1027)
 	var gotReq *tari_generated.Empty
 	srv := &fakeBaseNodeServer{
 		getMempoolStatsFn: func(ctx context.Context, req *tari_generated.Empty) (*tari_generated.MempoolStatsResponse, error) {
@@ -741,8 +741,8 @@ func TestGetMempoolStats_Error(t *testing.T) {
 // TestGetValidatorNodeChanges_Success verifies that GetValidatorNodeChanges forwards the request as-is and returns the response
 // the server sends (arg marshaling + response passthrough).
 func TestGetValidatorNodeChanges_Success(t *testing.T) {
-	wantReq := &tari_generated.GetValidatorNodeChangesRequest{}
-	wantResp := &tari_generated.GetValidatorNodeChangesResponse{}
+	wantReq := distinct(&tari_generated.GetValidatorNodeChangesRequest{}, 1017)
+	wantResp := distinct(&tari_generated.GetValidatorNodeChangesResponse{}, 1018)
 	var gotReq *tari_generated.GetValidatorNodeChangesRequest
 	srv := &fakeBaseNodeServer{
 		getValidatorNodeChangesFn: func(ctx context.Context, req *tari_generated.GetValidatorNodeChangesRequest) (*tari_generated.GetValidatorNodeChangesResponse, error) {
@@ -758,8 +758,8 @@ func TestGetValidatorNodeChanges_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetValidatorNodeChanges returned unexpected error: %v", err)
 	}
-	if gotReq == nil {
-		t.Fatal("server did not receive a request")
+	if !proto.Equal(gotReq, wantReq) {
+		t.Fatalf("GetValidatorNodeChanges request = %+v, want %+v", gotReq, wantReq)
 	}
 	if !proto.Equal(gotResp, wantResp) {
 		t.Fatalf("GetValidatorNodeChanges response = %+v, want %+v", gotResp, wantResp)
@@ -790,8 +790,8 @@ func TestGetValidatorNodeChanges_Error(t *testing.T) {
 // TestGetShardKey_Success verifies that GetShardKey forwards the request as-is and returns the response
 // the server sends (arg marshaling + response passthrough).
 func TestGetShardKey_Success(t *testing.T) {
-	wantReq := &tari_generated.GetShardKeyRequest{}
-	wantResp := &tari_generated.GetShardKeyResponse{}
+	wantReq := distinct(&tari_generated.GetShardKeyRequest{}, 1019)
+	wantResp := distinct(&tari_generated.GetShardKeyResponse{}, 1020)
 	var gotReq *tari_generated.GetShardKeyRequest
 	srv := &fakeBaseNodeServer{
 		getShardKeyFn: func(ctx context.Context, req *tari_generated.GetShardKeyRequest) (*tari_generated.GetShardKeyResponse, error) {
@@ -807,8 +807,8 @@ func TestGetShardKey_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetShardKey returned unexpected error: %v", err)
 	}
-	if gotReq == nil {
-		t.Fatal("server did not receive a request")
+	if !proto.Equal(gotReq, wantReq) {
+		t.Fatalf("GetShardKey request = %+v, want %+v", gotReq, wantReq)
 	}
 	if !proto.Equal(gotResp, wantResp) {
 		t.Fatalf("GetShardKey response = %+v, want %+v", gotResp, wantResp)
@@ -840,9 +840,9 @@ func TestGetShardKey_Error(t *testing.T) {
 // item the server streams back into a slice, in order.
 func TestListHeaders_DrainsStream(t *testing.T) {
 	want := []*tari_generated.BlockHeaderResponse{
-		{},
-		{},
-		{},
+		distinct(&tari_generated.BlockHeaderResponse{}, 1031),
+		distinct(&tari_generated.BlockHeaderResponse{}, 1032),
+		distinct(&tari_generated.BlockHeaderResponse{}, 1033),
 	}
 	var gotReq *tari_generated.ListHeadersRequest
 	srv := &fakeBaseNodeServer{
@@ -860,12 +860,13 @@ func TestListHeaders_DrainsStream(t *testing.T) {
 	if err := InitNodeGRPC(addr); err != nil {
 		t.Fatalf("InitNodeGRPC: %v", err)
 	}
-	got, err := ListHeaders(context.Background(), &tari_generated.ListHeadersRequest{})
+	wantReq := distinct(&tari_generated.ListHeadersRequest{}, 1034)
+	got, err := ListHeaders(context.Background(), wantReq)
 	if err != nil {
 		t.Fatalf("ListHeaders returned unexpected error: %v", err)
 	}
-	if gotReq == nil {
-		t.Fatal("server did not receive a request")
+	if !proto.Equal(gotReq, wantReq) {
+		t.Fatalf("ListHeaders request = %+v, want %+v", gotReq, wantReq)
 	}
 	if len(got) != len(want) {
 		t.Fatalf("ListHeaders returned %d items, want %d", len(got), len(want))
@@ -910,9 +911,9 @@ func TestListHeaders_PropagatesMidStreamError(t *testing.T) {
 // item the server streams back into a slice, in order.
 func TestGetTokensInCirculation_DrainsStream(t *testing.T) {
 	want := []*tari_generated.ValueAtHeightResponse{
-		{},
-		{},
-		{},
+		distinct(&tari_generated.ValueAtHeightResponse{}, 1038),
+		distinct(&tari_generated.ValueAtHeightResponse{}, 1039),
+		distinct(&tari_generated.ValueAtHeightResponse{}, 1040),
 	}
 	var gotReq *tari_generated.GetBlocksRequest
 	srv := &fakeBaseNodeServer{
@@ -930,12 +931,13 @@ func TestGetTokensInCirculation_DrainsStream(t *testing.T) {
 	if err := InitNodeGRPC(addr); err != nil {
 		t.Fatalf("InitNodeGRPC: %v", err)
 	}
-	got, err := GetTokensInCirculation(context.Background(), &tari_generated.GetBlocksRequest{})
+	wantReq := distinct(&tari_generated.GetBlocksRequest{}, 1041)
+	got, err := GetTokensInCirculation(context.Background(), wantReq)
 	if err != nil {
 		t.Fatalf("GetTokensInCirculation returned unexpected error: %v", err)
 	}
-	if gotReq == nil {
-		t.Fatal("server did not receive a request")
+	if !proto.Equal(gotReq, wantReq) {
+		t.Fatalf("GetTokensInCirculation request = %+v, want %+v", gotReq, wantReq)
 	}
 	if len(got) != len(want) {
 		t.Fatalf("GetTokensInCirculation returned %d items, want %d", len(got), len(want))
@@ -980,9 +982,9 @@ func TestGetTokensInCirculation_PropagatesMidStreamError(t *testing.T) {
 // item the server streams back into a slice, in order.
 func TestSearchKernels_DrainsStream(t *testing.T) {
 	want := []*tari_generated.HistoricalBlock{
-		{},
-		{},
-		{},
+		distinct(&tari_generated.HistoricalBlock{}, 1045),
+		distinct(&tari_generated.HistoricalBlock{}, 1046),
+		distinct(&tari_generated.HistoricalBlock{}, 1047),
 	}
 	var gotReq *tari_generated.SearchKernelsRequest
 	srv := &fakeBaseNodeServer{
@@ -1000,12 +1002,13 @@ func TestSearchKernels_DrainsStream(t *testing.T) {
 	if err := InitNodeGRPC(addr); err != nil {
 		t.Fatalf("InitNodeGRPC: %v", err)
 	}
-	got, err := SearchKernels(context.Background(), &tari_generated.SearchKernelsRequest{})
+	wantReq := distinct(&tari_generated.SearchKernelsRequest{}, 1048)
+	got, err := SearchKernels(context.Background(), wantReq)
 	if err != nil {
 		t.Fatalf("SearchKernels returned unexpected error: %v", err)
 	}
-	if gotReq == nil {
-		t.Fatal("server did not receive a request")
+	if !proto.Equal(gotReq, wantReq) {
+		t.Fatalf("SearchKernels request = %+v, want %+v", gotReq, wantReq)
 	}
 	if len(got) != len(want) {
 		t.Fatalf("SearchKernels returned %d items, want %d", len(got), len(want))
@@ -1050,9 +1053,9 @@ func TestSearchKernels_PropagatesMidStreamError(t *testing.T) {
 // item the server streams back into a slice, in order.
 func TestSearchUtxos_DrainsStream(t *testing.T) {
 	want := []*tari_generated.HistoricalBlock{
-		{},
-		{},
-		{},
+		distinct(&tari_generated.HistoricalBlock{}, 1052),
+		distinct(&tari_generated.HistoricalBlock{}, 1053),
+		distinct(&tari_generated.HistoricalBlock{}, 1054),
 	}
 	var gotReq *tari_generated.SearchUtxosRequest
 	srv := &fakeBaseNodeServer{
@@ -1070,12 +1073,13 @@ func TestSearchUtxos_DrainsStream(t *testing.T) {
 	if err := InitNodeGRPC(addr); err != nil {
 		t.Fatalf("InitNodeGRPC: %v", err)
 	}
-	got, err := SearchUtxos(context.Background(), &tari_generated.SearchUtxosRequest{})
+	wantReq := distinct(&tari_generated.SearchUtxosRequest{}, 1055)
+	got, err := SearchUtxos(context.Background(), wantReq)
 	if err != nil {
 		t.Fatalf("SearchUtxos returned unexpected error: %v", err)
 	}
-	if gotReq == nil {
-		t.Fatal("server did not receive a request")
+	if !proto.Equal(gotReq, wantReq) {
+		t.Fatalf("SearchUtxos request = %+v, want %+v", gotReq, wantReq)
 	}
 	if len(got) != len(want) {
 		t.Fatalf("SearchUtxos returned %d items, want %d", len(got), len(want))
@@ -1120,9 +1124,9 @@ func TestSearchUtxos_PropagatesMidStreamError(t *testing.T) {
 // item the server streams back into a slice, in order.
 func TestFetchMatchingUtxos_DrainsStream(t *testing.T) {
 	want := []*tari_generated.FetchMatchingUtxosResponse{
-		{},
-		{},
-		{},
+		distinct(&tari_generated.FetchMatchingUtxosResponse{}, 1059),
+		distinct(&tari_generated.FetchMatchingUtxosResponse{}, 1060),
+		distinct(&tari_generated.FetchMatchingUtxosResponse{}, 1061),
 	}
 	var gotReq *tari_generated.FetchMatchingUtxosRequest
 	srv := &fakeBaseNodeServer{
@@ -1140,12 +1144,13 @@ func TestFetchMatchingUtxos_DrainsStream(t *testing.T) {
 	if err := InitNodeGRPC(addr); err != nil {
 		t.Fatalf("InitNodeGRPC: %v", err)
 	}
-	got, err := FetchMatchingUtxos(context.Background(), &tari_generated.FetchMatchingUtxosRequest{})
+	wantReq := distinct(&tari_generated.FetchMatchingUtxosRequest{}, 1062)
+	got, err := FetchMatchingUtxos(context.Background(), wantReq)
 	if err != nil {
 		t.Fatalf("FetchMatchingUtxos returned unexpected error: %v", err)
 	}
-	if gotReq == nil {
-		t.Fatal("server did not receive a request")
+	if !proto.Equal(gotReq, wantReq) {
+		t.Fatalf("FetchMatchingUtxos request = %+v, want %+v", gotReq, wantReq)
 	}
 	if len(got) != len(want) {
 		t.Fatalf("FetchMatchingUtxos returned %d items, want %d", len(got), len(want))
@@ -1190,9 +1195,9 @@ func TestFetchMatchingUtxos_PropagatesMidStreamError(t *testing.T) {
 // item the server streams back into a slice, in order.
 func TestGetPeers_DrainsStream(t *testing.T) {
 	want := []*tari_generated.GetPeersResponse{
-		{},
-		{},
-		{},
+		distinct(&tari_generated.GetPeersResponse{}, 1066),
+		distinct(&tari_generated.GetPeersResponse{}, 1067),
+		distinct(&tari_generated.GetPeersResponse{}, 1068),
 	}
 	var gotReq *tari_generated.GetPeersRequest
 	srv := &fakeBaseNodeServer{
@@ -1210,12 +1215,13 @@ func TestGetPeers_DrainsStream(t *testing.T) {
 	if err := InitNodeGRPC(addr); err != nil {
 		t.Fatalf("InitNodeGRPC: %v", err)
 	}
-	got, err := GetPeers(context.Background(), &tari_generated.GetPeersRequest{})
+	wantReq := distinct(&tari_generated.GetPeersRequest{}, 1069)
+	got, err := GetPeers(context.Background(), wantReq)
 	if err != nil {
 		t.Fatalf("GetPeers returned unexpected error: %v", err)
 	}
-	if gotReq == nil {
-		t.Fatal("server did not receive a request")
+	if !proto.Equal(gotReq, wantReq) {
+		t.Fatalf("GetPeers request = %+v, want %+v", gotReq, wantReq)
 	}
 	if len(got) != len(want) {
 		t.Fatalf("GetPeers returned %d items, want %d", len(got), len(want))
@@ -1260,9 +1266,9 @@ func TestGetPeers_PropagatesMidStreamError(t *testing.T) {
 // item the server streams back into a slice, in order.
 func TestGetMempoolTransactions_DrainsStream(t *testing.T) {
 	want := []*tari_generated.GetMempoolTransactionsResponse{
-		{},
-		{},
-		{},
+		distinct(&tari_generated.GetMempoolTransactionsResponse{}, 1073),
+		distinct(&tari_generated.GetMempoolTransactionsResponse{}, 1074),
+		distinct(&tari_generated.GetMempoolTransactionsResponse{}, 1075),
 	}
 	var gotReq *tari_generated.GetMempoolTransactionsRequest
 	srv := &fakeBaseNodeServer{
@@ -1280,12 +1286,13 @@ func TestGetMempoolTransactions_DrainsStream(t *testing.T) {
 	if err := InitNodeGRPC(addr); err != nil {
 		t.Fatalf("InitNodeGRPC: %v", err)
 	}
-	got, err := GetMempoolTransactions(context.Background(), &tari_generated.GetMempoolTransactionsRequest{})
+	wantReq := distinct(&tari_generated.GetMempoolTransactionsRequest{}, 1076)
+	got, err := GetMempoolTransactions(context.Background(), wantReq)
 	if err != nil {
 		t.Fatalf("GetMempoolTransactions returned unexpected error: %v", err)
 	}
-	if gotReq == nil {
-		t.Fatal("server did not receive a request")
+	if !proto.Equal(gotReq, wantReq) {
+		t.Fatalf("GetMempoolTransactions request = %+v, want %+v", gotReq, wantReq)
 	}
 	if len(got) != len(want) {
 		t.Fatalf("GetMempoolTransactions returned %d items, want %d", len(got), len(want))
@@ -1330,9 +1337,9 @@ func TestGetMempoolTransactions_PropagatesMidStreamError(t *testing.T) {
 // item the server streams back into a slice, in order.
 func TestGetActiveValidatorNodes_DrainsStream(t *testing.T) {
 	want := []*tari_generated.GetActiveValidatorNodesResponse{
-		{},
-		{},
-		{},
+		distinct(&tari_generated.GetActiveValidatorNodesResponse{}, 1080),
+		distinct(&tari_generated.GetActiveValidatorNodesResponse{}, 1081),
+		distinct(&tari_generated.GetActiveValidatorNodesResponse{}, 1082),
 	}
 	var gotReq *tari_generated.GetActiveValidatorNodesRequest
 	srv := &fakeBaseNodeServer{
@@ -1350,12 +1357,13 @@ func TestGetActiveValidatorNodes_DrainsStream(t *testing.T) {
 	if err := InitNodeGRPC(addr); err != nil {
 		t.Fatalf("InitNodeGRPC: %v", err)
 	}
-	got, err := GetActiveValidatorNodes(context.Background(), &tari_generated.GetActiveValidatorNodesRequest{})
+	wantReq := distinct(&tari_generated.GetActiveValidatorNodesRequest{}, 1083)
+	got, err := GetActiveValidatorNodes(context.Background(), wantReq)
 	if err != nil {
 		t.Fatalf("GetActiveValidatorNodes returned unexpected error: %v", err)
 	}
-	if gotReq == nil {
-		t.Fatal("server did not receive a request")
+	if !proto.Equal(gotReq, wantReq) {
+		t.Fatalf("GetActiveValidatorNodes request = %+v, want %+v", gotReq, wantReq)
 	}
 	if len(got) != len(want) {
 		t.Fatalf("GetActiveValidatorNodes returned %d items, want %d", len(got), len(want))
@@ -1400,9 +1408,9 @@ func TestGetActiveValidatorNodes_PropagatesMidStreamError(t *testing.T) {
 // item the server streams back into a slice, in order.
 func TestGetTemplateRegistrations_DrainsStream(t *testing.T) {
 	want := []*tari_generated.GetTemplateRegistrationResponse{
-		{},
-		{},
-		{},
+		distinct(&tari_generated.GetTemplateRegistrationResponse{}, 1087),
+		distinct(&tari_generated.GetTemplateRegistrationResponse{}, 1088),
+		distinct(&tari_generated.GetTemplateRegistrationResponse{}, 1089),
 	}
 	var gotReq *tari_generated.GetTemplateRegistrationsRequest
 	srv := &fakeBaseNodeServer{
@@ -1420,12 +1428,13 @@ func TestGetTemplateRegistrations_DrainsStream(t *testing.T) {
 	if err := InitNodeGRPC(addr); err != nil {
 		t.Fatalf("InitNodeGRPC: %v", err)
 	}
-	got, err := GetTemplateRegistrations(context.Background(), &tari_generated.GetTemplateRegistrationsRequest{})
+	wantReq := distinct(&tari_generated.GetTemplateRegistrationsRequest{}, 1090)
+	got, err := GetTemplateRegistrations(context.Background(), wantReq)
 	if err != nil {
 		t.Fatalf("GetTemplateRegistrations returned unexpected error: %v", err)
 	}
-	if gotReq == nil {
-		t.Fatal("server did not receive a request")
+	if !proto.Equal(gotReq, wantReq) {
+		t.Fatalf("GetTemplateRegistrations request = %+v, want %+v", gotReq, wantReq)
 	}
 	if len(got) != len(want) {
 		t.Fatalf("GetTemplateRegistrations returned %d items, want %d", len(got), len(want))
@@ -1470,9 +1479,9 @@ func TestGetTemplateRegistrations_PropagatesMidStreamError(t *testing.T) {
 // item the server streams back into a slice, in order.
 func TestGetSideChainUtxos_DrainsStream(t *testing.T) {
 	want := []*tari_generated.GetSideChainUtxosResponse{
-		{},
-		{},
-		{},
+		distinct(&tari_generated.GetSideChainUtxosResponse{}, 1094),
+		distinct(&tari_generated.GetSideChainUtxosResponse{}, 1095),
+		distinct(&tari_generated.GetSideChainUtxosResponse{}, 1096),
 	}
 	var gotReq *tari_generated.GetSideChainUtxosRequest
 	srv := &fakeBaseNodeServer{
@@ -1490,12 +1499,13 @@ func TestGetSideChainUtxos_DrainsStream(t *testing.T) {
 	if err := InitNodeGRPC(addr); err != nil {
 		t.Fatalf("InitNodeGRPC: %v", err)
 	}
-	got, err := GetSideChainUtxos(context.Background(), &tari_generated.GetSideChainUtxosRequest{})
+	wantReq := distinct(&tari_generated.GetSideChainUtxosRequest{}, 1097)
+	got, err := GetSideChainUtxos(context.Background(), wantReq)
 	if err != nil {
 		t.Fatalf("GetSideChainUtxos returned unexpected error: %v", err)
 	}
-	if gotReq == nil {
-		t.Fatal("server did not receive a request")
+	if !proto.Equal(gotReq, wantReq) {
+		t.Fatalf("GetSideChainUtxos request = %+v, want %+v", gotReq, wantReq)
 	}
 	if len(got) != len(want) {
 		t.Fatalf("GetSideChainUtxos returned %d items, want %d", len(got), len(want))
@@ -1540,9 +1550,9 @@ func TestGetSideChainUtxos_PropagatesMidStreamError(t *testing.T) {
 // item the server streams back into a slice, in order.
 func TestSearchPaymentReferences_DrainsStream(t *testing.T) {
 	want := []*tari_generated.PaymentReferenceResponse{
-		{},
-		{},
-		{},
+		distinct(&tari_generated.PaymentReferenceResponse{}, 1101),
+		distinct(&tari_generated.PaymentReferenceResponse{}, 1102),
+		distinct(&tari_generated.PaymentReferenceResponse{}, 1103),
 	}
 	var gotReq *tari_generated.SearchPaymentReferencesRequest
 	srv := &fakeBaseNodeServer{
@@ -1560,12 +1570,13 @@ func TestSearchPaymentReferences_DrainsStream(t *testing.T) {
 	if err := InitNodeGRPC(addr); err != nil {
 		t.Fatalf("InitNodeGRPC: %v", err)
 	}
-	got, err := SearchPaymentReferences(context.Background(), &tari_generated.SearchPaymentReferencesRequest{})
+	wantReq := distinct(&tari_generated.SearchPaymentReferencesRequest{}, 1104)
+	got, err := SearchPaymentReferences(context.Background(), wantReq)
 	if err != nil {
 		t.Fatalf("SearchPaymentReferences returned unexpected error: %v", err)
 	}
-	if gotReq == nil {
-		t.Fatal("server did not receive a request")
+	if !proto.Equal(gotReq, wantReq) {
+		t.Fatalf("SearchPaymentReferences request = %+v, want %+v", gotReq, wantReq)
 	}
 	if len(got) != len(want) {
 		t.Fatalf("SearchPaymentReferences returned %d items, want %d", len(got), len(want))
@@ -1610,9 +1621,9 @@ func TestSearchPaymentReferences_PropagatesMidStreamError(t *testing.T) {
 // item the server streams back into a slice, in order.
 func TestSearchPaymentReferencesViaOutputHash_DrainsStream(t *testing.T) {
 	want := []*tari_generated.PaymentReferenceResponse{
-		{},
-		{},
-		{},
+		distinct(&tari_generated.PaymentReferenceResponse{}, 1108),
+		distinct(&tari_generated.PaymentReferenceResponse{}, 1109),
+		distinct(&tari_generated.PaymentReferenceResponse{}, 1110),
 	}
 	var gotReq *tari_generated.FetchMatchingUtxosRequest
 	srv := &fakeBaseNodeServer{
@@ -1630,12 +1641,13 @@ func TestSearchPaymentReferencesViaOutputHash_DrainsStream(t *testing.T) {
 	if err := InitNodeGRPC(addr); err != nil {
 		t.Fatalf("InitNodeGRPC: %v", err)
 	}
-	got, err := SearchPaymentReferencesViaOutputHash(context.Background(), &tari_generated.FetchMatchingUtxosRequest{})
+	wantReq := distinct(&tari_generated.FetchMatchingUtxosRequest{}, 1111)
+	got, err := SearchPaymentReferencesViaOutputHash(context.Background(), wantReq)
 	if err != nil {
 		t.Fatalf("SearchPaymentReferencesViaOutputHash returned unexpected error: %v", err)
 	}
-	if gotReq == nil {
-		t.Fatal("server did not receive a request")
+	if !proto.Equal(gotReq, wantReq) {
+		t.Fatalf("SearchPaymentReferencesViaOutputHash request = %+v, want %+v", gotReq, wantReq)
 	}
 	if len(got) != len(want) {
 		t.Fatalf("SearchPaymentReferencesViaOutputHash returned %d items, want %d", len(got), len(want))
